@@ -20,7 +20,7 @@ const formSchema = z.object({
       'Stock must be at least 0'
     ),
   stock: z.string(),
-  description: z.string().min(3, 'Description must be at least 3 characters'),
+  description: z.string(),
   active: z.boolean(),
   actions: z.string().optional(),
 })
