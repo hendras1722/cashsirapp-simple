@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
 import Navbar from '../organism/Navbar'
 import ListMenuSidebar from '../organism/ListMenuSidebar'
 import { Container } from '@mui/material'
@@ -11,8 +10,6 @@ const AdminLayout = ({ children }: { readonly children: React.ReactNode }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [sidebarWidth, setSidebarWidth] = useState(256)
   const [isResizing, setIsResizing] = useState(false)
-
-  const router = useRouter()
 
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed)
@@ -80,12 +77,6 @@ const AdminLayout = ({ children }: { readonly children: React.ReactNode }) => {
     }
   }, [handleResize, stopResize])
 
-  async function handleLogout() {
-    Cookies.remove('token')
-    Cookies.remove('refreshToken')
-    router.push('/login')
-  }
-
   return (
     <div className="h-screen !bg-gray-50 overflow-hidden">
       <div
@@ -107,10 +98,7 @@ const AdminLayout = ({ children }: { readonly children: React.ReactNode }) => {
             </div>
           </div>
         </div>
-        <ListMenuSidebar
-          sidebarCollapsed={sidebarCollapsed}
-          handleLogout={handleLogout}
-        />
+        <ListMenuSidebar sidebarCollapsed={sidebarCollapsed} />
         {!sidebarCollapsed && (
           <div
             className="absolute right-0 top-0 bottom-0 w-1 bg-transparent hover:bg-blue-500 cursor-col-resize transition-colors duration-150 group"
