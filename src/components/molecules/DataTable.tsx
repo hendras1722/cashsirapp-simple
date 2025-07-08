@@ -7,7 +7,7 @@ import {
   TableCell,
   TableContainer,
   TableHead,
-  TablePagination,
+  // TablePagination,
   TableRow,
 } from '@mui/material'
 
@@ -35,21 +35,21 @@ export default function DataTable<T extends { [key: string]: any }>({
   items,
   page,
   rowsPerPage,
-  onPageChange,
-  onRowsPerPageChange,
-  totalItems,
+  // onPageChange,
+  // onRowsPerPageChange,
+  // totalItems,
   loading = false,
 }: Readonly<ReusableTableProps<T>>) {
-  const handleChangePage = (_event: unknown, newPage: number) => {
-    onPageChange(newPage)
-  }
+  // const handleChangePage = (_event: unknown, newPage: number) => {
+  //   onPageChange(newPage)
+  // }
 
-  const handleChangeRowsPerPage = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    onRowsPerPageChange(+event.target.value)
-    onPageChange(0) // Reset to first page
-  }
+  // const handleChangeRowsPerPage = (
+  //   event: React.ChangeEvent<HTMLInputElement>
+  // ) => {
+  //   onRowsPerPageChange(+event.target.value)
+  //   onPageChange(0) // Reset to first page
+  // }
 
   return (
     <Paper sx={{ width: '100%', overflow: 'hidden', boxShadow: 'none' }}>
@@ -102,7 +102,7 @@ export default function DataTable<T extends { [key: string]: any }>({
         </Table>
       </TableContainer>
 
-      <TablePagination
+      {/* <TablePagination
         rowsPerPageOptions={[10, 25, 100]}
         component="div"
         count={totalItems}
@@ -110,7 +110,7 @@ export default function DataTable<T extends { [key: string]: any }>({
         page={page}
         onPageChange={handleChangePage}
         onRowsPerPageChange={handleChangeRowsPerPage}
-      />
+      /> */}
     </Paper>
   )
 }
