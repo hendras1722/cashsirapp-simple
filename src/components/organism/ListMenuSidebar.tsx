@@ -2,16 +2,14 @@
 
 import Button from '@mui/material/Button'
 import IconButton from '@mui/material/IconButton'
-import { SquaresExclude, LogOut } from 'lucide-react'
+import { SquaresExclude, Link } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 import { Else, If } from '../atoms/if'
 
 export default function ListMenuSidebar({
   sidebarCollapsed,
-  handleLogout,
 }: {
   readonly sidebarCollapsed: boolean
-  readonly handleLogout: () => void
 }) {
   const pathName = usePathname()
   return (
@@ -25,7 +23,7 @@ export default function ListMenuSidebar({
             size="small"
             className={`!shadow-none !w-full flex !justify-start`}
           >
-            {!sidebarCollapsed && 'product'}
+            {!sidebarCollapsed && 'Product'}
           </Button>
           <Else key="else-1">
             <IconButton
@@ -38,8 +36,30 @@ export default function ListMenuSidebar({
           </Else>
         </If>
       </div>
+      <div className="space-y-1">
+        <If condition={!sidebarCollapsed}>
+          <Button
+            variant={pathName === '/' ? 'contained' : 'text'}
+            href="/"
+            startIcon={<Link />}
+            size="small"
+            className={`!shadow-none !w-full flex !justify-start`}
+          >
+            {!sidebarCollapsed && 'View'}
+          </Button>
+          <Else key="else-1">
+            <IconButton
+              href="/"
+              aria-label="dashboard"
+              color={pathName === '/' ? 'primary' : 'default'}
+            >
+              <Link />
+            </IconButton>
+          </Else>
+        </If>
+      </div>
 
-      <div
+      {/* <div
         onClick={handleLogout}
         className={
           pathName === '/logout'
@@ -59,7 +79,7 @@ export default function ListMenuSidebar({
             Logout
           </span>
         )}
-      </div>
+      </div> */}
     </nav>
   )
 }

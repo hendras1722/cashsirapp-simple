@@ -3,15 +3,15 @@ import { Box, Button, InputAdornment, Switch, TextField } from '@mui/material'
 import DataTable from '../molecules/DataTable'
 import { Search } from 'lucide-react'
 import Modal from '../atoms/Modal'
-import { useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import z from 'zod'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-// import { useRoute } from '@/composable/useRoute'
-import { useApi } from '@/composable/useApi'
-import useComputed from '@/composable/useComputed'
+import { moneyRupiah } from '@/utils/convertMoney'
+import { useComputed } from '@/composable/useComputed'
 
 const formSchema = z.object({
+  id: z.string().optional(),
   product_name: z.string().min(3, 'Product name must be at least 3 characters'),
   price: z
     .string()
@@ -19,95 +19,182 @@ const formSchema = z.object({
       (value) => Number(value.replace(/[.]/g, '')) > 0,
       'Stock must be at least 0'
     ),
-  stock: z.number(),
+  stock: z.string(),
   description: z.string().min(3, 'Description must be at least 3 characters'),
   active: z.boolean(),
+  actions: z.string().optional(),
 })
 
 export default function ProductLayout() {
   const [open, setOpen] = useState(false)
+  const [products, setProducts] = useState<z.infer<typeof formSchema>[]>([])
+  const [search, setSearch] = useState('')
 
-  // const route = useRoute()
+  const [isEdit, setEdit] = useState('')
+  const id = useId()
 
-  const { data, isLoading } = useApi<{ name: string }>({
-    url: '/v1/v1/operator/081234567890',
-  })
-  console.log(data, isLoading)
-
-  // console.log(route)
+  useEffect(() => {
+    const storedProducts = localStorage.getItem('product')
+    if (storedProducts) {
+      setProducts(JSON.parse(storedProducts))
+    }
+  }, [])
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      stock: 0,
-      price: '0',
+      product_name: '',
+      price: '',
+      stock: '',
+      description: '',
+      active: false,
     },
   })
 
+  useEffect(() => {
+    if (!open) {
+      setEdit('')
+      form.reset()
+    }
+  }, [open, form])
+
   const columns: {
     label: string
-    minWidth: number
-    accessor: 'name' | 'code' | 'popularity' | 'rating'
+    minWidth?: number
+    accessor?: keyof z.infer<typeof formSchema> | 'actions'
+    render?: (row: z.infer<typeof formSchema>, index: number) => React.ReactNode
   }[] = [
     {
       label: 'Name',
       minWidth: 170,
-      accessor: 'name',
+      accessor: 'product_name',
     },
     {
-      label: 'Code',
+      label: 'Stock',
       minWidth: 100,
-      accessor: 'code',
+      accessor: 'stock',
     },
     {
-      label: 'Popularity',
-      minWidth: 170,
-      accessor: 'popularity',
+      label: 'Price',
+      minWidth: 70,
+      accessor: 'price',
+      render: (row) => `Rp.${row.price}`,
     },
     {
-      label: 'Rating',
+      label: 'Description',
       minWidth: 170,
-      accessor: 'rating',
+      accessor: 'description',
+    },
+    {
+      label: 'Active',
+      minWidth: 70,
+      accessor: 'active',
+      render: (row) => (
+        <Switch
+          checked={row.active}
+          onChange={() => {
+            const updatedProducts = products.map((product) => {
+              if (product.id === row.id) {
+                return {
+                  ...product,
+                  active: !product.active,
+                }
+              }
+              return product
+            })
+            setProducts(updatedProducts)
+            localStorage.setItem('product', JSON.stringify(updatedProducts))
+          }}
+        />
+      ),
+    },
+    {
+      label: 'Action',
+      minWidth: 70,
+      accessor: 'actions',
+      render: (row) => (
+        <div className="flex gap-2">
+          <Button
+            variant="contained"
+            onClick={() => {
+              form.setValue('product_name', row.product_name)
+              form.setValue('price', row.price)
+              form.setValue('stock', row.stock)
+              form.setValue('description', row.description)
+              form.setValue('active', row.active)
+              setOpen(true)
+              setEdit(row.id ?? '')
+            }}
+          >
+            Edit
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={() => {
+              setEdit(row.id ?? '')
+              handeDelete()
+            }}
+          >
+            Delete
+          </Button>
+        </div>
+      ),
     },
   ]
 
-  const items = [
-    {
-      name: 'Frozen yoghurt',
-      code: '123',
-      popularity: '123',
-      rating: '123',
-    },
-  ]
-
-  const [params, setParams] = useState({
-    page: 1,
-    limit: 10,
-    search: '',
+  const items = useComputed(() => {
+    return products
+      ? products.filter((product) =>
+          product.product_name.toLowerCase().includes(search.toLowerCase())
+        )
+      : []
   })
 
-  const filterParams = useComputed(() => ({
-    search: params.search,
-  }))
+  function handleSubmit(data: z.infer<typeof formSchema>) {
+    setOpen(false)
+    if (isEdit) {
+      const findProduct = products.find((product) => isEdit === product.id)
+      if (findProduct) {
+        const updatedProducts = products.map((product) => {
+          if (product.id === isEdit) {
+            return {
+              ...product,
+              ...data,
+            }
+          }
+          return product
+        })
+        setProducts(updatedProducts)
+        localStorage.setItem('product', JSON.stringify(updatedProducts))
+      }
+      return
+    }
+    const updatedProducts = [
+      ...products,
+      { ...data, id: id + data.product_name },
+    ]
+    setProducts(updatedProducts)
+    localStorage.setItem('product', JSON.stringify(updatedProducts))
+  }
 
-  // child components
-  const handleSearch = useComputed(
-    () => params.search,
-    (newValue) =>
-      setParams((prevState) => ({
-        ...prevState,
-        search: newValue,
-      }))
-  )
-
+  function handeDelete() {
+    const updatedProducts = products.filter((product) => product.id !== isEdit)
+    setProducts(updatedProducts)
+    localStorage.setItem('product', JSON.stringify(updatedProducts))
+  }
   return (
     <div>
-      {JSON.stringify(filterParams.value)}
-      <Modal setOpen={setOpen} open={open} title="Add Product" contentText="">
+      <Modal
+        setOpen={setOpen}
+        open={open}
+        title={isEdit ? 'Edit Product' : 'Add Product'}
+        contentText=""
+      >
         <Box pb={2}>
           <div>
             <form
-              onSubmit={form.handleSubmit((data) => console.log(data))}
+              onSubmit={form.handleSubmit(handleSubmit)}
               className="flex flex-col gap-3"
             >
               <TextField
@@ -118,17 +205,43 @@ export default function ProductLayout() {
                 helperText={form.formState.errors.product_name?.message}
                 margin="dense"
               />
-              <TextField
-                fullWidth
-                label="Price"
-                {...form.register('price')}
-                error={!!form.formState.errors.price}
-                helperText={form.formState.errors.price?.message}
+              <Controller
+                control={form.control}
+                name="price"
+                render={({ field }) => (
+                  <TextField
+                    fullWidth
+                    label="Price"
+                    {...field}
+                    error={!!form.formState.errors.price}
+                    helperText={form.formState.errors.price?.message}
+                    onInput={(e) => {
+                      const input = e.target as HTMLInputElement
+                      if (!input.value) return (input.value = '')
+                      if (input.value.startsWith('0')) {
+                        input.value = ''
+                        return
+                      }
+                      const value = moneyRupiah(input.value)
+                      if (value === '') return (input.value = '')
+                      input.value = value.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+                      field.onChange(input.value)
+                    }}
+                  />
+                )}
               />
+
               <TextField
                 type="number"
                 fullWidth
                 label="Stock"
+                onInput={(e) => {
+                  const input = e.target as HTMLInputElement
+                  if (!input.value) return (input.value = '')
+                  if (input.value.startsWith('0')) {
+                    input.value = ''
+                  }
+                }}
                 {...form.register('stock')}
                 error={!!form.formState.errors.stock}
                 helperText={form.formState.errors.stock?.message}
@@ -146,7 +259,17 @@ export default function ProductLayout() {
                 alignItems={'center'}
               >
                 <span>Product Status</span>
-                <Switch {...form.register('active')} defaultChecked />
+                <Controller
+                  control={form.control}
+                  name="active"
+                  render={({ field }) => (
+                    <Switch
+                      {...form.register('active')}
+                      onChange={field.onChange}
+                      checked={field.value}
+                    />
+                  )}
+                />
               </Box>
               <Button variant="contained" type="submit">
                 Submit
@@ -158,7 +281,7 @@ export default function ProductLayout() {
       <div>
         <Box display={'flex'} justifyContent={'space-between'} mb={5} gap={3}>
           <TextField
-            onChange={(e) => (handleSearch.value = e.target.value)}
+            onChange={(e) => setSearch(e.target.value)}
             slotProps={{
               input: {
                 startAdornment: (
@@ -177,7 +300,7 @@ export default function ProductLayout() {
         </Box>
         <DataTable
           fields={columns}
-          items={items}
+          items={items.value}
           onPageChange={() => {}}
           onRowsPerPageChange={() => {}}
           totalItems={1}
