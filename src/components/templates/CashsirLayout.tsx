@@ -7,7 +7,10 @@ import { Button, Input } from '@mui/material'
 import { X, ShoppingCart } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
+import Modal from '../atoms/Modal'
+import { format } from 'date-fns'
+import html2canvas from 'html2canvas'
 
 interface Product {
   id: number
@@ -25,6 +28,9 @@ export default function CashsirLayout() {
   const [cart, setCart] = useState<Product[]>([])
   const [search, setSearch] = useState('')
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [open, setOpen] = useState(false)
+  const receiptRef = useRef<HTMLDivElement>(null)
+  const [isCapturing, setIsCapturing] = useState(false)
 
   useEffect(() => {
     const product = localStorage.getItem('product')
@@ -181,9 +187,203 @@ export default function CashsirLayout() {
   function toggleSidebar() {
     setIsSidebarOpen(!isSidebarOpen)
   }
+  // Fungsi untuk mengambil screenshot dari element
+  const captureReceipt = async () => {
+    if (!receiptRef.current) return null
+
+    try {
+      // Set state untuk hide buttons
+      setIsCapturing(true)
+
+      // Wait a bit untuk ensure UI update
+      await new Promise((resolve) => setTimeout(resolve, 100))
+
+      const canvas = await html2canvas(receiptRef.current, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        height: receiptRef.current.scrollHeight,
+        width: receiptRef.current.scrollWidth,
+      })
+
+      setIsCapturing(false)
+
+      return canvas
+    } catch (error) {
+      console.error('Error capturing receipt:', error)
+      setIsCapturing(false)
+      return null
+    }
+  }
+
+  // Fungsi untuk download receipt sebagai gambar
+  const downloadReceipt = async () => {
+    const canvas = await captureReceipt()
+    if (!canvas) return
+
+    try {
+      const link = document.createElement('a')
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+
+      link.download = `receipt-${timestamp}.png`
+      link.href = canvas.toDataURL('image/png')
+
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+
+      console.log('Receipt downloaded successfully')
+    } catch (error) {
+      console.error('Error downloading receipt:', error)
+    }
+  }
+
+  // Fungsi untuk print receipt
+  const printReceipt = async () => {
+    const canvas = await captureReceipt()
+    if (!canvas) return
+
+    try {
+      const printWindow = window.open('', '_blank')
+      const imgData = canvas.toDataURL('image/png')
+      if (!printWindow) return
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Receipt</title>
+            <style>
+              body {
+                margin: 0;
+                padding: 20px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                background: white;
+                position: absolute;
+                top:0;
+              }
+              img {
+                max-width: 100%;
+                height: auto;
+              }
+              @media print {
+                body {
+                  margin: 0;
+                  padding: 0;
+                }
+                img {
+                  width: 100%;
+                  page-break-inside: avoid;
+                }
+              }
+            </style>
+          </head>
+          <body>
+            <img src="${imgData}" alt="Receipt" />
+            <script>
+              window.onload = function() {
+                window.print();
+                window.onafterprint = function() {
+                  window.close();
+                };
+              };
+            </script>
+          </body>
+        </html>
+      `)
+
+      printWindow.document.close()
+    } catch (error) {
+      console.error('Error printing receipt:', error)
+    }
+  }
 
   return (
     <div className="h-screen bg-gray-400 flex relative">
+      <Modal open={open} setOpen={setOpen} contentText={''} title={''}>
+        <div className="mb-5" ref={receiptRef}>
+          <div className="text-center">
+            {format(new Date(), 'dd/MM/yyyy HH:mm')}
+          </div>
+          <table className="mt-5 w-full">
+            <thead className="text-left gap-3">
+              <tr>
+                <th className="px-1 sm:px-3 text-xs sm:text-sm"></th>
+                <th className="px-1 sm:px-3 text-xs sm:text-sm"></th>
+                <th className="px-1 sm:px-3 text-xs sm:text-sm"></th>
+                <th className="px-1 sm:px-3 text-xs sm:text-sm"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <ArrayMap
+                of={cart}
+                render={(item) => (
+                  <tr key={item.id}>
+                    <td className="px-1 sm:px-3 break-words max-w-[80px] sm:max-w-[120px] text-xs sm:text-sm">
+                      {item.product_name}
+                    </td>
+                    <td className="px-1 sm:px-3">
+                      <div className="flex items-center gap-1 sm:gap-2">
+                        <span className="text-xs sm:text-sm min-w-[20px] text-center">
+                          {item.total_item}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-1 sm:px-3 text-xs sm:text-sm">
+                      Rp.
+                      {(item.price &&
+                        Number(item.price.replace(/[.]/g, '')).toLocaleString(
+                          'id-ID'
+                        )) ||
+                        0}
+                    </td>
+                  </tr>
+                )}
+              />
+              <tr>
+                <td className="px-1 sm:px-3 break-words max-w-[80px] sm:max-w-[120px] text-xs sm:text-sm">
+                  Total
+                </td>
+                <td className="px-1 sm:px-3"></td>
+                <td className="px-1 sm:px-3 text-xs sm:text-sm">
+                  Rp.
+                  {(totalPrice.value &&
+                    totalPrice.value.toLocaleString('id-ID')) ||
+                    0}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div className="border-2 border-black h-1 w-full border-dashed mt-5"></div>
+          <p className="text-center text-lg mt-3 " style={{ marginBottom: 30 }}>
+            Terima kasih sudah menggunakan layanan kami
+          </p>
+          <div className="flex justify-between gap-3 mt-3">
+            {!isCapturing && (
+              <>
+                <Button
+                  fullWidth
+                  color="info"
+                  variant="outlined"
+                  onClick={downloadReceipt}
+                >
+                  Download
+                </Button>
+                <Button
+                  fullWidth
+                  color="success"
+                  variant="outlined"
+                  onClick={printReceipt}
+                >
+                  Print
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+      </Modal>
+
       {/* Main Content */}
       <div className="bg-white h-full flex-1 flex p-3 flex-wrap gap-5 flex-col">
         <div className="flex flex-row justify-between gap-4">
@@ -386,7 +586,13 @@ export default function CashsirLayout() {
                   0}
               </span>
             </div>
-            <Button fullWidth variant="contained" className="mx-3">
+            <Button
+              fullWidth
+              variant="contained"
+              className="mx-3"
+              onClick={() => setOpen(true)}
+              disabled={!cart.length}
+            >
               Print
             </Button>
           </div>

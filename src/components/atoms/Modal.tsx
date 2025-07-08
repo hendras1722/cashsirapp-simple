@@ -3,6 +3,7 @@ import Dialog from '@mui/material/Dialog'
 import DialogContent from '@mui/material/DialogContent'
 import DialogTitle from '@mui/material/DialogTitle'
 import { DialogContentText } from '@mui/material'
+import { useStyles } from '@/utils/MUI'
 
 export default function Modal({
   children,
@@ -21,8 +22,13 @@ export default function Modal({
     setOpen(false)
   }
 
+  const classes = useStyles()
+
   return (
     <Dialog
+      classes={{
+        paper: classes.dialog,
+      }}
       open={open}
       onClose={handleClose}
       disableEscapeKeyDown
