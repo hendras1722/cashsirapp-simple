@@ -123,7 +123,7 @@ export default function ProductLayout() {
               form.setValue('description', row.description)
               form.setValue('active', row.active)
               setOpen(true)
-              setEdit(row.id ?? '')
+              setEdit(row.id ? row.id : '')
             }}
           >
             Edit
@@ -132,7 +132,7 @@ export default function ProductLayout() {
             variant="contained"
             color="error"
             onClick={() => {
-              setEdit(row.id ?? '')
+              setEdit(row.id ? row.id : '')
               handeDelete()
             }}
           >

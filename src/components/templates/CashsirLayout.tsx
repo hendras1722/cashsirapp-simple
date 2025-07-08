@@ -4,7 +4,7 @@ import ArrayMap from '@/components/atoms/ArrayMap'
 import { Else, If } from '@/components/atoms/if'
 import { useComputed, useReactive } from '@/composable/useComputed'
 import { Button, Input } from '@mui/material'
-import { X } from 'lucide-react'
+import { X, ShoppingCart } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
@@ -24,7 +24,7 @@ export default function CashsirLayout() {
   const [items, setItems] = useState<Product[]>([])
   const [cart, setCart] = useState<Product[]>([])
   const [search, setSearch] = useState('')
-  const [showDrawer, setShowDrawer] = useState(false)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
   useEffect(() => {
     const product = localStorage.getItem('product')
@@ -82,6 +82,7 @@ export default function CashsirLayout() {
       )
     }, 0)
   })
+
   function handleAdd(data) {
     const getCart = localStorage.getItem('cart')
     if (getCart) {
@@ -177,32 +178,33 @@ export default function CashsirLayout() {
     localStorage.setItem('cart', JSON.stringify(updatedCart))
   }
 
+  function toggleSidebar() {
+    setIsSidebarOpen(!isSidebarOpen)
+  }
+
   return (
-    <div className="h-screen bg-gray-400 flex flex-col lg:flex-row">
-      {' '}
-      {/* Mobile: column, Desktop: row */}
+    <div className="h-screen bg-gray-400 flex relative">
       {/* Main Content */}
-      <div className="relative bg-white h-full flex-1 flex p-3 gap-5 flex-col">
-        <div className="flex flex-col md:flex-row justify-between gap-4">
-          <div className="flex flex-col w-full md:w-2/3">
+      <div className="bg-white h-full flex-1 flex p-3 flex-wrap gap-5 flex-col">
+        <div className="flex flex-row justify-between gap-4">
+          <div className="flex flex-col w-full">
             <small>Search:</small>
-            <Input
-              fullWidth
-              onChange={(e) => (searchComputed.value = e.target.value)}
-            />
+            <Input onChange={(e) => (searchComputed.value = e.target.value)} />
           </div>
-          <Button
-            href="/admin/product"
-            variant="outlined"
-            className="md:w-auto w-full"
-          >
-            Manage
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              href="/admin/product"
+              variant="outlined"
+              className="hidden sm:inline-flex"
+            >
+              Manage
+            </Button>
+          </div>
         </div>
 
-        <main className="flex flex-col gap-5">
+        <main className="flex flex-col gap-5 pb-20 lg:pb-5">
           <If condition={getItem.value.length === 0}>
-            <div className="flex justify-center mt-5 relative">
+            <div className="flex flex-row justify-center mt-5 relative">
               <Image
                 src="/man-woman.jpg"
                 alt="empty"
@@ -210,21 +212,21 @@ export default function CashsirLayout() {
                 width={630}
                 height={630}
               />
-              <div className="absolute top-2/4 md:mt-28 mt-20 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
+              <div className="absolute top-2/4 md:mt-28 mt-20 left-1/2 -translate-x-1/2 -translate-y-1/2">
                 <h3 className="text-sm">Kamu belum menambahkan barang</h3>
                 <Link className="text-blue-600" href={'/admin/product'}>
                   Tambah Barang
                 </Link>
               </div>
             </div>
-            <Else key="empty">
-              <div className="flex flex-wrap gap-6 w-full justify-center md:justify-start">
+            <Else key={'empty'}>
+              <div className="h-fit flex flex-wrap gap-6 w-full justify-center sm:justify-start">
                 <ArrayMap
                   of={getItem.value}
                   render={(item, index) => (
                     <div
                       key={item.id + index}
-                      className="p-5 shadow-sm h-fit border border-slate-300 rounded-md flex flex-col gap-2 w-full sm:w-[200px] max-w-[250px]"
+                      className="p-5 shadow-sm h-fit border border-slate-300 rounded-md flex flex-col gap-2 w-[200px]"
                     >
                       <div className="break-words">{item.product_name}</div>
                       <small>
@@ -234,9 +236,11 @@ export default function CashsirLayout() {
                         variant="contained"
                         className="!mt-3"
                         onClick={() => handleAdd(item)}
-                        disabled={cartComputed.value?.some(
-                          (cartId) => cartId.id === item.id
-                        )}
+                        disabled={
+                          cartComputed.value?.filter(
+                            (cartId) => cartId.id === item.id
+                          ).length > 0
+                        }
                       >
                         Add Cart
                       </Button>
@@ -248,126 +252,146 @@ export default function CashsirLayout() {
           </If>
         </main>
 
-        {/* Cart Button Mobile (Always visible at bottom) */}
-        {cartComputed.value.length > 0 && (
-          <div className="fixed bottom-5 left-0 right-0 ml-auto mr-auto px-3 lg:hidden">
-            <Button
-              fullWidth
-              variant="contained"
-              onClick={() => setShowDrawer(true)}
-            >
-              Cart
-            </Button>
-          </div>
-        )}
-      </div>
-      {/* Drawer Sidebar Mobile */}
-      {showDrawer && (
-        <div>
-          {/* Backdrop */}
-          <button
-            className="fixed inset-0 bg-black bg-opacity-40 z-40"
-            onClick={() => setShowDrawer(false)}
-          ></button>
-
-          {/* Drawer Content */}
-          <div
-            className={`fixed top-0 right-0 h-full w-[90%] max-w-[400px] bg-white shadow-lg z-50 ease-in-out transform transition-transform duration-300 ${
-              showDrawer ? 'translate-x-0' : 'translate-x-full'
-            }`}
+        {/* Mobile Cart Button */}
+        <div className="fixed bottom-5 left-3 right-3 lg:!hidden">
+          <Button
+            fullWidth
+            variant="contained"
+            onClick={toggleSidebar}
+            className="!py-3"
           >
-            <div className="flex flex-col h-full">
-              <div className="flex justify-between items-center p-3 border-b">
-                <h3 className="text-lg font-semibold">Detail Rincian</h3>
-                <Button onClick={() => setShowDrawer(false)}>
-                  <X />
-                </Button>
-              </div>
-              <div className="px-3 flex-1 overflow-auto">
-                <table className="min-w-full text-left mt-5">
-                  <thead>
-                    <tr>
-                      <th className="px-3 text-nowrap">Nama</th>
-                      <th className="px-3 text-nowrap">Jumlah</th>
-                      <th className="px-3 text-nowrap">Total</th>
-                      <th className="px-3"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <ArrayMap
-                      of={cart}
-                      render={(item) => (
-                        <tr key={item.id}>
-                          <td className="px-3 break-words max-w-[10px]">
-                            {item.product_name}
-                          </td>
-                          <td className="px-3">
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="outlined"
-                                size="small"
-                                className="!min-w-fit mr-3"
-                                onClick={() => addStock(item)}
-                                disabled={
-                                  !!(
-                                    item.total_item &&
-                                    item.total_item >= item.stock
-                                  )
-                                }
-                              >
-                                +
-                              </Button>
-                              {item.total_item}
-                              <Button
-                                variant="outlined"
-                                size="small"
-                                className="!min-w-fit mr-3"
-                                onClick={() => minStock(item)}
-                              >
-                                -
-                              </Button>
-                            </div>
-                          </td>
-                          <td className="px-3">
-                            Rp.
-                            {Number(
-                              item.price.replace(/[.]/g, '')
-                            ).toLocaleString('id-ID')}
-                          </td>
-                          <td className="px-3">
+            <ShoppingCart className="w-4 h-4 mr-2" />
+            Cart ({cart.length})
+          </Button>
+        </div>
+      </div>
+
+      {/* Mobile Sidebar Overlay */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          onClick={toggleSidebar}
+        />
+      )}
+
+      {/* Sidebar */}
+      <div
+        className={`
+        fixed lg:relative
+        top-0 right-0 h-full
+        bg-gray-50 shadow-sm border-l border-slate-300
+        transform transition-transform duration-300 ease-in-out
+        z-50
+        ${isSidebarOpen ? 'translate-x-0' : 'translate-x-full'}
+        lg:translate-x-0
+        lg:block
+      `}
+      >
+        <div className="flex flex-col h-full w-[90vw] sm:w-[450px] lg:w-[450px]">
+          <div className="flex flex-col items-center p-3 relative">
+            <Button
+              className="!absolute left-3 top-3 !min-w-fit !p-2 lg:!hidden"
+              onClick={toggleSidebar}
+              variant="outlined"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+            <h3 className="mt-8 lg:mt-0">Detail Rincian</h3>
+          </div>
+
+          <div className="px-3 flex-1 h-[calc(100vh-200px)] overflow-auto">
+            <div className="overflow-x-auto">
+              <table className="mt-5 w-full">
+                <thead className="text-left gap-3">
+                  <tr>
+                    <th className="px-1 sm:px-3 text-xs sm:text-sm">
+                      Nama Barang
+                    </th>
+                    <th className="px-1 sm:px-3 text-xs sm:text-sm">Jumlah</th>
+                    <th className="px-1 sm:px-3 text-xs sm:text-sm">Total</th>
+                    <th className="px-1 sm:px-3 text-xs sm:text-sm"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <ArrayMap
+                    of={cart}
+                    render={(item) => (
+                      <tr key={item.id}>
+                        <td className="px-1 sm:px-3 break-words max-w-[80px] sm:max-w-[120px] text-xs sm:text-sm">
+                          {item.product_name}
+                        </td>
+                        <td className="px-1 sm:px-3">
+                          <div className="flex items-center gap-1 sm:gap-2">
                             <Button
-                              onClick={() => deleteStock(item)}
                               variant="outlined"
-                              color="error"
                               size="small"
+                              className="!min-w-fit !p-1 !text-xs"
+                              onClick={() => addStock(item)}
+                              disabled={
+                                !!(
+                                  item.total_item &&
+                                  item.total_item >= item.stock
+                                )
+                              }
                             >
-                              <X />
+                              +
                             </Button>
-                          </td>
-                        </tr>
-                      )}
-                    />
-                  </tbody>
-                </table>
-              </div>
-              <div className="p-3 border-t">
-                <div className="flex justify-between font-bold mb-3">
-                  <span>Total:</span>
-                  <span>
-                    Rp.
-                    {(totalPrice.value &&
-                      totalPrice.value.toLocaleString('id-ID')) ||
-                      0}
-                  </span>
-                </div>
-                <Button fullWidth variant="contained">
-                  Print
-                </Button>
-              </div>
+                            <span className="text-xs sm:text-sm min-w-[20px] text-center">
+                              {item.total_item}
+                            </span>
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              className="!min-w-fit !p-1 !text-xs"
+                              onClick={() => minStock(item)}
+                            >
+                              -
+                            </Button>
+                          </div>
+                        </td>
+                        <td className="px-1 sm:px-3 text-xs sm:text-sm">
+                          Rp.
+                          {(item.price &&
+                            Number(
+                              item.price.replace(/[.]/g, '')
+                            ).toLocaleString('id-ID')) ||
+                            0}
+                        </td>
+                        <td className="px-1 sm:px-3">
+                          <Button
+                            onClick={() => deleteStock(item)}
+                            variant="outlined"
+                            color="error"
+                            size="small"
+                            className="!min-w-fit !p-1"
+                          >
+                            <X className="w-3 h-3" />
+                          </Button>
+                        </td>
+                      </tr>
+                    )}
+                  />
+                </tbody>
+              </table>
             </div>
           </div>
+
+          <div className="h-[100px] border-t border-slate-200 flex flex-col items-start justify-center px-2">
+            <div className="mt-5 px-3 mb-1 flex items-center justify-between font-bold w-full">
+              <span className="text-sm sm:text-base">Total : </span>
+              <span className="text-sm sm:text-base">
+                Rp.
+                {(totalPrice.value &&
+                  totalPrice.value.toLocaleString('id-ID')) ||
+                  0}
+              </span>
+            </div>
+            <Button fullWidth variant="contained" className="mx-3">
+              Print
+            </Button>
+          </div>
         </div>
-      )}
+      </div>
     </div>
   )
 }
