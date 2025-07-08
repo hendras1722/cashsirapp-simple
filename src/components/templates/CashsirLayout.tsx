@@ -157,7 +157,6 @@ export default function CashsirLayout() {
 
   function minStock(e) {
     const product = cartComputed.value.find((item) => item.id === e.id)
-    console.log(product)
     if (product) {
       const updatedCart = cartComputed.value
         .map((item) => {
@@ -187,15 +186,12 @@ export default function CashsirLayout() {
   function toggleSidebar() {
     setIsSidebarOpen(!isSidebarOpen)
   }
-  // Fungsi untuk mengambil screenshot dari element
   const captureReceipt = async () => {
     if (!receiptRef.current) return null
 
     try {
-      // Set state untuk hide buttons
       setIsCapturing(true)
 
-      // Wait a bit untuk ensure UI update
       await new Promise((resolve) => setTimeout(resolve, 100))
 
       const canvas = await html2canvas(receiptRef.current, {
@@ -239,15 +235,19 @@ export default function CashsirLayout() {
     }
   }
 
-  // Fungsi untuk print receipt
   const printReceipt = async () => {
     const canvas = await captureReceipt()
     if (!canvas) return
 
     try {
       const printWindow = window.open('', '_blank')
+      if (!printWindow) {
+        console.error('Failed to open print window')
+        return
+      }
+
       const imgData = canvas.toDataURL('image/png')
-      if (!printWindow) return
+
       printWindow.document.write(`
         <html>
           <head>
@@ -261,7 +261,7 @@ export default function CashsirLayout() {
                 align-items: center;
                 background: white;
                 position: absolute;
-                top:0;
+                top: 0;
               }
               img {
                 max-width: 100%;
@@ -283,17 +283,43 @@ export default function CashsirLayout() {
             <img src="${imgData}" alt="Receipt" />
             <script>
               window.onload = function() {
+                // Auto print ketika halaman loaded
                 window.print();
+                
+                // Close tab setelah print selesai
                 window.onafterprint = function() {
                   window.close();
                 };
+                
+                // Fallback: close tab jika user cancel print (setelah delay)
+                setTimeout(function() {
+                  window.close();
+                }, 1000);
               };
+              
+              document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                  window.close();
+                }
+                if (e.ctrlKey && e.key === 'w') {
+                  window.close();
+                }
+                if (e.metaKey && e.key === 'w') {
+                  window.close();
+                }
+              });
+              
+              window.addEventListener('beforeunload', function() {
+                window.close();
+              });
             </script>
           </body>
         </html>
       `)
 
       printWindow.document.close()
+
+      printWindow.focus()
     } catch (error) {
       console.error('Error printing receipt:', error)
     }
