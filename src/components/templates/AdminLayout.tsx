@@ -78,7 +78,7 @@ const AdminLayout = ({ children }: { readonly children: React.ReactNode }) => {
   }, [handleResize, stopResize])
 
   return (
-    <div className="h-screen !bg-gray-50 overflow-hidden">
+    <div className="h-screen !bg-gray-50 overflow-hidden" aria-hidden>
       <div
         className={`fixed h-full left-0 z-50 bg-white shadow-lg transition-all duration-300 ${
           sidebarCollapsed

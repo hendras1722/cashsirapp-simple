@@ -1,6 +1,7 @@
 import React from 'react'
 import {
   LinearProgress,
+  NoSsr,
   Paper,
   Table,
   TableBody,
@@ -58,15 +59,17 @@ export default function DataTable<T extends { [key: string]: any }>({
         <Table stickyHeader>
           <TableHead>
             <TableRow>
-              {fields.map((column, index) => (
-                <TableCell
-                  key={`${column.label}-${index}`}
-                  align={column.align}
-                  style={{ minWidth: column.minWidth }}
-                >
-                  {column.label}
-                </TableCell>
-              ))}
+              <NoSsr>
+                {(fields || [])?.map((column, index) => (
+                  <TableCell
+                    key={`${column.label}-${index}`}
+                    align={column.align}
+                    style={{ minWidth: column.minWidth }}
+                  >
+                    {column.label}
+                  </TableCell>
+                ))}
+              </NoSsr>
             </TableRow>
           </TableHead>
           <TableBody>

@@ -25,7 +25,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={roboto.variable}>
-      <body>
+      <body cz-shortcut-listen="true">
         <AppRouterCacheProvider>
           <ThemeProvider theme={theme}>
             <QueryProvider>{children}</QueryProvider>

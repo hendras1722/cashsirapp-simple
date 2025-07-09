@@ -1,8 +1,7 @@
 'use client'
 
-import { User } from 'lucide-react'
 import BaseHamburger from '../atoms/BaseHamburger'
-import { Suspense, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 export interface GetMe {
   id: string
@@ -15,16 +14,16 @@ export interface GetMe {
 
 export default function Navbar({
   toggleSidebar,
-  getMe,
-}: {
+}: // getMe,
+{
   readonly toggleSidebar: () => void
   readonly getMe: GetMe
 }) {
-  const [isClient, setIsClient] = useState(false)
+  // const [isClient, setIsClient] = useState(false)
 
-  useEffect(() => {
-    setIsClient(true)
-  }, [])
+  // useEffect(() => {
+  //   setIsClient(true)
+  // }, [])
 
   return (
     <header className="bg-white  shadow-sm border-b border-gray-200 h-16 flex items-center justify-between !px-4">
@@ -34,7 +33,7 @@ export default function Navbar({
 
       <div className="flex items-center space-x-4">
         <div className="flex items-center space-x-3 gap-3">
-          <Suspense>
+          {/* <Suspense>
             {isClient && (
               <>
                 <span className="text-slate-500">{getMe?.name}</span>
@@ -43,7 +42,7 @@ export default function Navbar({
                 </div>
               </>
             )}
-          </Suspense>
+          </Suspense> */}
         </div>
       </div>
     </header>
