@@ -1,7 +1,6 @@
 'use client'
 
 import BaseHamburger from '../atoms/BaseHamburger'
-import { useEffect, useState } from 'react'
 
 export interface GetMe {
   id: string
