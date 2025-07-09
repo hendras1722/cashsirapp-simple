@@ -40,6 +40,12 @@ export default function CashsirLayout() {
   useEffect(() => {
     localStorage.removeItem('cart')
   }, [route.asPath])
+  useEffect(() => {
+    if (!open) {
+      setCart([])
+      localStorage.removeItem('cart')
+    }
+  }, [open, setOpen])
 
   useEffect(() => {
     const product = localStorage.getItem('product')
