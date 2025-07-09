@@ -511,7 +511,7 @@ export default function CashsirLayout() {
                       className="p-5 shadow-sm h-fit border border-slate-300 rounded-md flex flex-col gap-2 w-[170px]"
                     >
                       <div className="break-words">{item.product_name}</div>
-                      <small>
+                      <small className="text-xs text-slate-400">
                         Rp.{item.price} • {item.stock} item
                       </small>
                       <Button
