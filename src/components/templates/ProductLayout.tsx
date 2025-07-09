@@ -3,12 +3,13 @@ import { Box, Button, InputAdornment, Switch, TextField } from '@mui/material'
 import DataTable from '../molecules/DataTable'
 import { Search } from 'lucide-react'
 import Modal from '../atoms/Modal'
-import { useEffect, useId, useState } from 'react'
+import { useEffect, useState } from 'react'
 import z from 'zod'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { moneyRupiah } from '@/utils/convertMoney'
 import { useComputed } from '@/composable/useComputed'
+import { generateUUID } from '@/utils/generatorUUID'
 
 const formSchema = z.object({
   id: z.string().optional(),
@@ -31,7 +32,7 @@ export default function ProductLayout() {
   const [search, setSearch] = useState('')
 
   const [isEdit, setEdit] = useState('')
-  const id = useId()
+  const [isDelete, setDelete] = useState('')
 
   useEffect(() => {
     const storedProducts = localStorage.getItem('product')
@@ -132,7 +133,7 @@ export default function ProductLayout() {
             variant="contained"
             color="error"
             onClick={() => {
-              setEdit(row.id ? row.id : '')
+              setDelete(row.id ? row.id : '')
               handeDelete()
             }}
           >
@@ -150,9 +151,9 @@ export default function ProductLayout() {
         )
       : []
   })
+  const id = generateUUID()
 
   function handleSubmit(data: z.infer<typeof formSchema>) {
-    setOpen(false)
     if (isEdit) {
       const findProduct = products.find((product) => isEdit === product.id)
       if (findProduct) {
@@ -168,18 +169,21 @@ export default function ProductLayout() {
         setProducts(updatedProducts)
         localStorage.setItem('product', JSON.stringify(updatedProducts))
       }
+      setOpen(false)
+
       return
     }
-    const updatedProducts = [
-      ...products,
-      { ...data, id: id + data.product_name },
-    ]
+
+    const updatedProducts = [...products, { ...data, id: id }]
     setProducts(updatedProducts)
     localStorage.setItem('product', JSON.stringify(updatedProducts))
+    setOpen(false)
   }
 
   function handeDelete() {
-    const updatedProducts = products.filter((product) => product.id !== isEdit)
+    const updatedProducts = products.filter(
+      (product) => product.id !== isDelete
+    )
     setProducts(updatedProducts)
     localStorage.setItem('product', JSON.stringify(updatedProducts))
   }

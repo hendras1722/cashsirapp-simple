@@ -11,6 +11,7 @@ import { useEffect, useState, useRef } from 'react'
 import Modal from '../atoms/Modal'
 import { format } from 'date-fns'
 import html2canvas from 'html2canvas'
+import { generateUUID } from '@/utils/generatorUUID'
 
 interface Product {
   id: number
@@ -31,6 +32,7 @@ export default function CashsirLayout() {
   const [open, setOpen] = useState(false)
   const receiptRef = useRef<HTMLDivElement>(null)
   const [isCapturing, setIsCapturing] = useState(false)
+  const uuid = generateUUID()
 
   useEffect(() => {
     const product = localStorage.getItem('product')
@@ -87,6 +89,18 @@ export default function CashsirLayout() {
         (item.count ? Number(String(item.count).replace(/[.]/g, '')) : 0)
       )
     }, 0)
+  })
+
+  const totalPriceDetail = useComputed(() => {
+    const cartPrint = localStorage.getItem('cart')
+    return cartPrint
+      ? JSON.parse(cartPrint).reduce((total: number, item: Product) => {
+          return (
+            total +
+            (item.count ? Number(String(item.count).replace(/[.]/g, '')) : 0)
+          )
+        }, 0)
+      : 0
   })
 
   function handleAdd(data) {
@@ -325,6 +339,34 @@ export default function CashsirLayout() {
     }
   }
 
+  function handleDetailPrint() {
+    setOpen(true)
+    const product = getItem.value.map((items) => {
+      const item = cart.find((item) => item.id === items.id)
+      if (!item) return { ...items }
+      return {
+        ...items,
+        stock: items.stock - (item?.total_item || 0),
+      }
+    })
+    setCart([])
+    localStorage.setItem('product', JSON.stringify(product))
+    setItems(product)
+  }
+
+  const getDetailPrint = useComputed(() => {
+    const getRincian = localStorage.getItem('cart')
+    return getRincian ? (JSON.parse(getRincian) as Product[]) : []
+  })
+
+  const getTotalHarga = useComputed(() => {
+    return getDetailPrint.value.map((item) => {
+      return {
+        ...item,
+        total: Number(item.price.replace(/[.]/g, '')) * (item.total_item || 0),
+      }
+    })
+  })
   return (
     <div className="h-screen bg-gray-400 flex relative">
       <Modal open={open} setOpen={setOpen} contentText={''} title={''}>
@@ -332,6 +374,7 @@ export default function CashsirLayout() {
           <div className="text-center">
             {format(new Date(), 'dd/MM/yyyy HH:mm')}
           </div>
+          <div className="text-center mb-2">{uuid}</div>
           <table className="mt-5 w-full">
             <thead className="text-left gap-3">
               <tr>
@@ -343,8 +386,8 @@ export default function CashsirLayout() {
             </thead>
             <tbody>
               <ArrayMap
-                of={cart}
-                render={(item) => (
+                of={getDetailPrint.value}
+                render={(item, index) => (
                   <tr key={item.id}>
                     <td className="px-1 sm:px-3 break-words max-w-[80px] sm:max-w-[120px] text-xs sm:text-sm">
                       {item.product_name}
@@ -358,24 +401,20 @@ export default function CashsirLayout() {
                     </td>
                     <td className="px-1 sm:px-3 text-xs sm:text-sm">
                       Rp.
-                      {(item.price &&
-                        Number(item.price.replace(/[.]/g, '')).toLocaleString(
-                          'id-ID'
-                        )) ||
-                        0}
+                      {getTotalHarga.value[index].total.toLocaleString('id-ID')}
                     </td>
                   </tr>
                 )}
               />
               <tr>
                 <td className="px-1 sm:px-3 break-words max-w-[80px] sm:max-w-[120px] text-xs sm:text-sm">
-                  Total
+                  Harga
                 </td>
                 <td className="px-1 sm:px-3"></td>
                 <td className="px-1 sm:px-3 text-xs sm:text-sm">
                   Rp.
-                  {(totalPrice.value &&
-                    totalPrice.value.toLocaleString('id-ID')) ||
+                  {(totalPriceDetail.value &&
+                    totalPriceDetail.value.toLocaleString('id-ID')) ||
                     0}
                 </td>
               </tr>
@@ -534,7 +573,7 @@ export default function CashsirLayout() {
                       Nama Barang
                     </th>
                     <th className="px-1 sm:px-3 text-xs sm:text-sm">Jumlah</th>
-                    <th className="px-1 sm:px-3 text-xs sm:text-sm">Total</th>
+                    <th className="px-1 sm:px-3 text-xs sm:text-sm">Harga</th>
                     <th className="px-1 sm:px-3 text-xs sm:text-sm"></th>
                   </tr>
                 </thead>
@@ -616,7 +655,7 @@ export default function CashsirLayout() {
               fullWidth
               variant="contained"
               className="mx-3"
-              onClick={() => setOpen(true)}
+              onClick={handleDetailPrint}
               disabled={!cart.length}
             >
               Print
