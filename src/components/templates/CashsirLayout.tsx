@@ -12,6 +12,7 @@ import Modal from '../atoms/Modal'
 import { format } from 'date-fns'
 import html2canvas from 'html2canvas'
 import { generateUUID } from '@/utils/generatorUUID'
+import { useRoute } from '@/composable/useRoute'
 
 interface Product {
   id: number
@@ -34,6 +35,12 @@ export default function CashsirLayout() {
   const [isCapturing, setIsCapturing] = useState(false)
   const uuid = generateUUID()
 
+  const route = useRoute()
+
+  useEffect(() => {
+    localStorage.removeItem('cart')
+  }, [route.asPath])
+
   useEffect(() => {
     const product = localStorage.getItem('product')
     const cartItem = localStorage.getItem('cart')
@@ -44,6 +51,10 @@ export default function CashsirLayout() {
 
     if (product) {
       setItems(JSON.parse(product).filter((item) => item.active))
+    }
+
+    return () => {
+      localStorage.removeItem('cart')
     }
   }, [])
 
