@@ -491,7 +491,7 @@ export default function CashsirLayout() {
                   render={(item, index) => (
                     <div
                       key={item.id + index}
-                      className="p-5 shadow-sm h-fit border border-slate-300 rounded-md flex flex-col gap-2 w-[200px]"
+                      className="p-5 shadow-sm h-fit border border-slate-300 rounded-md flex flex-col gap-2 w-[180px]"
                     >
                       <div className="break-words">{item.product_name}</div>
                       <small>
