@@ -76,7 +76,7 @@ export default function CashsirLayout() {
     return (
       (items.length > 0 &&
         items
-          .filter((item) => item.active)
+          .filter((item) => item.active && item.stock > 0)
           .filter((item) =>
             item.product_name.toLowerCase().includes(search.toLowerCase())
           )) ||
