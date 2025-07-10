@@ -17,6 +17,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { moneyRupiah } from '@/utils/convertMoney'
 import { useComputed } from '@/composable/useComputed'
 import { generateUUID } from '@/utils/generatorUUID'
+import { If } from '../atoms/if'
 
 const formSchema = z.object({
   id: z.string().optional(),
@@ -366,41 +367,46 @@ export default function ProductLayout() {
                 error={!!form.formState.errors.stock}
                 helperText={form.formState.errors.stock?.message}
               />
-              <Controller
-                name="category"
-                control={form.control}
-                render={({
-                  field: { onChange, onBlur, value, ref },
-                  fieldState: { error },
-                }) => (
-                  <Autocomplete
-                    onBlur={onBlur}
-                    onChange={(_, newValue) => {
-                      onChange(newValue ? newValue.code : '')
-                    }}
-                    value={
-                      getCategory.value.find(
-                        (option) => option.code === value
-                      ) || null
-                    }
-                    options={getCategory.value}
-                    getOptionLabel={(option: { label: string }) => option.label}
-                    isOptionEqualToValue={(
-                      option: { label: string; code: string },
-                      value: { label: string; code: string }
-                    ) => option.code === value.code}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Category"
-                        inputRef={ref}
-                        error={!!error}
-                        helperText={error && error.message}
-                      />
-                    )}
-                  />
-                )}
-              />
+              <If condition={!!(getCategory.value?.length > 0)}>
+                <Controller
+                  name="category"
+                  control={form.control}
+                  render={({
+                    field: { onChange, onBlur, value, ref },
+                    fieldState: { error },
+                  }) => (
+                    <Autocomplete
+                      onBlur={onBlur}
+                      onChange={(_, newValue) => {
+                        onChange(newValue ? newValue.code : '')
+                      }}
+                      value={
+                        getCategory.value.find(
+                          (option) => option.code === value
+                        ) || null
+                      }
+                      options={getCategory.value}
+                      getOptionLabel={(option: { label: string }) =>
+                        option.label
+                      }
+                      isOptionEqualToValue={(
+                        option: { label: string; code: string },
+                        value: { label: string; code: string }
+                      ) => option.code === value.code}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Category"
+                          inputRef={ref}
+                          error={!!error}
+                          helperText={error && error.message}
+                        />
+                      )}
+                    />
+                  )}
+                />
+              </If>
+
               <TextField
                 fullWidth
                 label="Description"

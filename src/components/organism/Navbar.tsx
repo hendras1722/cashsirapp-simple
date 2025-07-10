@@ -16,7 +16,7 @@ export default function Navbar({
 }: // getMe,
 {
   readonly toggleSidebar: () => void
-  readonly getMe: GetMe
+  readonly getMe?: GetMe
 }) {
   // const [isClient, setIsClient] = useState(false)
 

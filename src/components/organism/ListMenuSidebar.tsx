@@ -2,9 +2,10 @@
 
 import Button from '@mui/material/Button'
 import IconButton from '@mui/material/IconButton'
-import { SquaresExclude, Link } from 'lucide-react'
+import { SquaresExclude, Link, File } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 import { Else, If } from '../atoms/if'
+import { NoSsr } from '@mui/material'
 
 export default function ListMenuSidebar({
   sidebarCollapsed,
@@ -14,50 +15,75 @@ export default function ListMenuSidebar({
   const pathName = usePathname()
   return (
     <nav className="!px-2 !py-4 space-y-1">
-      <div className="space-y-1">
-        <If condition={!sidebarCollapsed}>
-          <Button
-            variant={pathName === '/admin/product' ? 'contained' : 'text'}
-            href="/admin/product"
-            startIcon={<SquaresExclude />}
-            size="small"
-            className={`!shadow-none !w-full flex !justify-start`}
-          >
-            {!sidebarCollapsed && 'Product'}
-          </Button>
-          <Else key="else-1">
-            <IconButton
+      <NoSsr>
+        <div className="space-y-1">
+          <If condition={!sidebarCollapsed}>
+            <Button
+              variant={pathName === '/admin/product' ? 'contained' : 'text'}
               href="/admin/product"
-              aria-label="dashboard"
-              color={pathName === '/admin/product' ? 'primary' : 'default'}
+              startIcon={<SquaresExclude />}
+              size="small"
+              className={`!shadow-none !w-full flex !justify-start`}
             >
-              <SquaresExclude />
-            </IconButton>
-          </Else>
-        </If>
-      </div>
-      <div className="space-y-1">
-        <If condition={!sidebarCollapsed}>
-          <Button
-            variant={pathName === '/' ? 'contained' : 'text'}
-            href="/"
-            startIcon={<Link />}
-            size="small"
-            className={`!shadow-none !w-full flex !justify-start`}
-          >
-            {!sidebarCollapsed && 'View'}
-          </Button>
-          <Else key="else-1">
-            <IconButton
+              {!sidebarCollapsed && 'Product'}
+            </Button>
+            <Else key="else-1">
+              <IconButton
+                href="/admin/product"
+                aria-label="dashboard"
+                color={pathName === '/admin/product' ? 'primary' : 'default'}
+              >
+                <SquaresExclude />
+              </IconButton>
+            </Else>
+          </If>
+        </div>
+
+        <div className="space-y-1">
+          <If condition={!sidebarCollapsed}>
+            <Button
+              variant={pathName === '/admin/category' ? 'contained' : 'text'}
+              href="/admin/category"
+              startIcon={<File />}
+              size="small"
+              className={`!shadow-none !w-full flex !justify-start`}
+            >
+              {!sidebarCollapsed && 'Category'}
+            </Button>
+            <Else key="else-1">
+              <IconButton
+                href="/admin/category"
+                aria-label="dashboard"
+                color={pathName === '/admin/category' ? 'primary' : 'default'}
+              >
+                <Link />
+              </IconButton>
+            </Else>
+          </If>
+        </div>
+        <div className="space-y-1">
+          <If condition={!sidebarCollapsed}>
+            <Button
+              variant={pathName === '/' ? 'contained' : 'text'}
               href="/"
-              aria-label="dashboard"
-              color={pathName === '/' ? 'primary' : 'default'}
+              startIcon={<Link />}
+              size="small"
+              className={`!shadow-none !w-full flex !justify-start`}
             >
-              <Link />
-            </IconButton>
-          </Else>
-        </If>
-      </div>
+              {!sidebarCollapsed && 'View'}
+            </Button>
+            <Else key="else-1">
+              <IconButton
+                href="/"
+                aria-label="dashboard"
+                color={pathName === '/' ? 'primary' : 'default'}
+              >
+                <Link />
+              </IconButton>
+            </Else>
+          </If>
+        </div>
+      </NoSsr>
 
       {/* <div
         onClick={handleLogout}

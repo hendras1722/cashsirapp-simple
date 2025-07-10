@@ -23,6 +23,12 @@ interface Product {
   price: string
   count?: number
   total_item?: number
+  category?: string
+}
+
+interface Category {
+  id: number
+  name: string
 }
 
 export default function CashsirLayout() {
@@ -33,6 +39,7 @@ export default function CashsirLayout() {
   const [open, setOpen] = useState(false)
   const receiptRef = useRef<HTMLDivElement>(null)
   const [isCapturing, setIsCapturing] = useState(false)
+  const [category, setCategory] = useState<Category[]>([])
   const uuid = generateUUID()
 
   const route = useRoute()
@@ -50,6 +57,7 @@ export default function CashsirLayout() {
   useEffect(() => {
     const product = localStorage.getItem('product')
     const cartItem = localStorage.getItem('cart')
+    const categoryItem = localStorage.getItem('category')
 
     if (cartItem) {
       setCart(JSON.parse(cartItem))
@@ -57,6 +65,9 @@ export default function CashsirLayout() {
 
     if (product) {
       setItems(JSON.parse(product).filter((item) => item.active))
+    }
+    if (categoryItem) {
+      setCategory(JSON.parse(categoryItem))
     }
 
     return () => {
@@ -78,16 +89,63 @@ export default function CashsirLayout() {
     return []
   })
 
+  const getCategory = useComputed(() => {
+    return category
+  })
+
   const getItem = useComputed(() => {
-    return (
+    const productFilter =
       (items.length > 0 &&
         items
+          .map((item) => {
+            const categoryParse = getCategory.value
+            const findCategory = categoryParse.find(
+              (itemCategory: any) => itemCategory.id === item.category
+            )
+            if (findCategory) {
+              return {
+                ...item,
+                category: findCategory,
+              }
+            }
+            return {
+              ...item,
+              category: '',
+            }
+          })
           .filter((item) => item.active && item.stock > 0)
           .filter((item) =>
             item.product_name.toLowerCase().includes(search.toLowerCase())
-          )) ||
+          )
+          .sort((a, b) => {
+            const aEmpty = a.category === '' || a.category === undefined
+            const bEmpty = b.category === '' || b.category === undefined
+
+            if (aEmpty && !bEmpty) return 1
+            if (!aEmpty && bEmpty) return -1
+            if (aEmpty && bEmpty) return 0
+            return a.category && b.category
+              ? (a.category as string).localeCompare(b.category as string)
+              : 0
+          })) ||
       []
-    )
+
+    const withCategory = productFilter.reduce(function (r, a) {
+      if ((a.category as Category)?.name) {
+        r[(a.category as Category).name] =
+          r[(a.category as Category).name] || []
+        r[(a.category as Category).name].push(a)
+      } else {
+        r['Uncategorized'] = r['Uncategorized'] || []
+        r['Uncategorized'].push(a)
+      }
+      return r
+    }, Object.create(null))
+
+    if (getCategory.value.length > 0) {
+      return withCategory
+    }
+    return productFilter
   })
 
   const searchComputed = useReactive(
@@ -109,9 +167,8 @@ export default function CashsirLayout() {
   })
 
   const totalPriceDetail = useComputed(() => {
-    const cartPrint = localStorage.getItem('cart')
-    return cartPrint
-      ? JSON.parse(cartPrint).reduce((total: number, item: Product) => {
+    return cartComputed.value
+      ? cartComputed.value.reduce((total: number, item: Product) => {
           return (
             total +
             (item.count ? Number(String(item.count).replace(/[.]/g, '')) : 0)
@@ -366,18 +423,16 @@ export default function CashsirLayout() {
         stock: items.stock - (item?.total_item || 0),
       }
     })
-    setCart([])
     localStorage.setItem('product', JSON.stringify(product))
     setItems(product)
   }
 
   const getDetailPrint = useComputed(() => {
-    const getRincian = localStorage.getItem('cart')
-    return getRincian ? (JSON.parse(getRincian) as Product[]) : []
+    return cartComputed.value ?? []
   })
 
   const getTotalHarga = useComputed(() => {
-    return getDetailPrint.value.map((item) => {
+    return (getDetailPrint.value || [])?.map((item) => {
       return {
         ...item,
         total: Number(item.price.replace(/[.]/g, '')) * (item.total_item || 0),
@@ -502,33 +557,79 @@ export default function CashsirLayout() {
               </div>
             </div>
             <Else key={'empty'}>
-              <div className="h-fit flex flex-wrap gap-6 w-full justify-center sm:justify-start">
-                <ArrayMap
-                  of={getItem.value}
-                  render={(item, index) => (
-                    <div
-                      key={item.id + index}
-                      className="p-5 shadow-sm h-fit border border-slate-300 rounded-md flex flex-col gap-2 w-[170px]"
-                    >
-                      <div className="break-words">{item.product_name}</div>
-                      <small className="text-xs text-slate-400">
-                        Rp.{item.price} • {item.stock} item
-                      </small>
-                      <Button
-                        variant="contained"
-                        className="!mt-3"
-                        onClick={() => handleAdd(item)}
-                        disabled={
-                          cartComputed.value?.filter(
-                            (cartId) => cartId.id === item.id
-                          ).length > 0
-                        }
+              <div
+                className={
+                  'h-fit flex flex-wrap gap-6 w-full justify-center sm:justify-start' +
+                  (getCategory.value.length > 0 ? ' flex-col' : '')
+                }
+              >
+                <If condition={Array.isArray(getItem.value)}>
+                  <ArrayMap
+                    of={getItem.value as Product[]}
+                    render={(item, index) => (
+                      <div
+                        key={item.id + index}
+                        className="p-5 shadow-sm h-fit border border-slate-300 rounded-md flex flex-col gap-2 w-[170px]"
                       >
-                        Add Cart
-                      </Button>
-                    </div>
-                  )}
-                />
+                        <div className="break-words">{item.product_name}</div>
+                        <small className="text-xs text-slate-400">
+                          Rp.{item.price} • {item.stock} item
+                        </small>
+                        <Button
+                          variant="contained"
+                          className="!mt-3"
+                          onClick={() => handleAdd(item)}
+                          disabled={
+                            cartComputed.value?.filter(
+                              (cartId) => cartId.id === item.id
+                            ).length > 0
+                          }
+                        >
+                          Add Cart
+                        </Button>
+                      </div>
+                    )}
+                  />
+                  <Else key={'elseMap'}>
+                    <ArrayMap
+                      of={Object.keys(getItem.value)}
+                      render={(item, index) => (
+                        <div key={item + index}>
+                          <h3>{item} #</h3>
+                          <hr />
+                          <ArrayMap
+                            of={getItem.value[item] as Product[]}
+                            render={(item) => (
+                              <div
+                                key={item.id + index}
+                                className="p-5 mt-3 shadow-sm h-fit border border-slate-300 rounded-md flex flex-col gap-2 w-[170px]"
+                              >
+                                <div className="break-words">
+                                  {item.product_name}
+                                </div>
+                                <small className="text-xs text-slate-400">
+                                  Rp.{item.price} • {item.stock} item
+                                </small>
+                                <Button
+                                  variant="contained"
+                                  className="!mt-3"
+                                  onClick={() => handleAdd(item)}
+                                  disabled={
+                                    cartComputed.value?.filter(
+                                      (cartId) => cartId.id === item.id
+                                    ).length > 0
+                                  }
+                                >
+                                  Add Cart
+                                </Button>
+                              </div>
+                            )}
+                          />
+                        </div>
+                      )}
+                    />
+                  </Else>
+                </If>
               </div>
             </Else>
           </If>
