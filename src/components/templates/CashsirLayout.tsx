@@ -612,8 +612,6 @@ export default function CashsirLayout() {
               (getItem.value || [])?.length === 0
             }
           >
-            {JSON.stringify(getItem.value)}
-            asd
             <div className="flex flex-row justify-center mt-5 relative">
               <Image
                 src="/man-woman.jpg"
