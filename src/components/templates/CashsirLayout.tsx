@@ -3,8 +3,16 @@
 import ArrayMap from '@/components/atoms/ArrayMap'
 import { Else, If } from '@/components/atoms/if'
 import { useComputed, useReactive } from '@/composable/useComputed'
-import { Button, Input } from '@mui/material'
-import { X, ShoppingCart } from 'lucide-react'
+import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Button,
+  Input,
+  NoSsr,
+  Typography,
+} from '@mui/material'
+import { X, ShoppingCart, ChevronDown } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useState, useRef } from 'react'
@@ -32,7 +40,9 @@ interface Category {
 }
 
 export default function CashsirLayout() {
-  const [items, setItems] = useState<Product[]>([])
+  const [items, setItems] = useState<Product[] | { [key: string]: Product[] }>(
+    []
+  )
   const [cart, setCart] = useState<Product[]>([])
   const [search, setSearch] = useState('')
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
@@ -93,6 +103,45 @@ export default function CashsirLayout() {
     return category
   })
 
+  const getCheckout = useComputed(() => {
+    const productFilter =
+      (items.length > 0 &&
+        items
+          .map((item) => {
+            const categoryParse = getCategory.value
+            const findCategory = categoryParse.find(
+              (itemCategory: any) => itemCategory.id === item.category
+            )
+            if (findCategory) {
+              return {
+                ...item,
+                category: findCategory.name,
+              }
+            }
+            return {
+              ...item,
+              category: '',
+            }
+          })
+          .filter((item) => item.active && item.stock > 0)
+          .filter((item) =>
+            item.product_name.toLowerCase().includes(search.toLowerCase())
+          )
+          .sort((a, b) => {
+            const aEmpty = a.category === '' || a.category === undefined
+            const bEmpty = b.category === '' || b.category === undefined
+
+            if (aEmpty && !bEmpty) return 1
+            if (!aEmpty && bEmpty) return -1
+            if (aEmpty && bEmpty) return 0
+            return a.category && b.category
+              ? (a.category as string).localeCompare(b.category as string)
+              : 0
+          })) ||
+      []
+    return productFilter
+  })
+
   const getItem = useComputed(() => {
     const productFilter =
       (items.length > 0 &&
@@ -105,7 +154,7 @@ export default function CashsirLayout() {
             if (findCategory) {
               return {
                 ...item,
-                category: findCategory,
+                category: findCategory.name,
               }
             }
             return {
@@ -130,17 +179,16 @@ export default function CashsirLayout() {
           })) ||
       []
 
-    const withCategory = productFilter.reduce(function (r, a) {
-      if ((a.category as Category)?.name) {
-        r[(a.category as Category).name] =
-          r[(a.category as Category).name] || []
-        r[(a.category as Category).name].push(a)
+    const withCategory = (productFilter || []).reduce(function (r, a) {
+      if (a.category) {
+        r[a.category] = r[a.category] || []
+        r[a.category].push(a)
       } else {
         r['Uncategorized'] = r['Uncategorized'] || []
         r['Uncategorized'].push(a)
       }
       return r
-    }, Object.create(null))
+    }, {})
 
     if (getCategory.value.length > 0) {
       return withCategory
@@ -301,7 +349,6 @@ export default function CashsirLayout() {
     }
   }
 
-  // Fungsi untuk download receipt sebagai gambar
   const downloadReceipt = async () => {
     const canvas = await captureReceipt()
     if (!canvas) return
@@ -415,14 +462,34 @@ export default function CashsirLayout() {
 
   function handleDetailPrint() {
     setOpen(true)
-    const product = getItem.value.map((items) => {
+    if (Array.isArray(getItem.value)) {
+      const product = getItem.value.map((items) => {
+        const item = cart.find((item) => item.id === items.id)
+        if (!item) return { ...items }
+        return {
+          ...items,
+          stock: items.stock - (item?.total_item || 0),
+        }
+      })
+      localStorage.setItem('product', JSON.stringify(product))
+      setItems(product)
+      return
+    }
+    const product = getCheckout.value.map((items) => {
+      console.log(items)
+      const categoryParse = getCategory.value
+      const findCategory = categoryParse.find(
+        (itemCategory: any) => itemCategory.name === items.category
+      )
       const item = cart.find((item) => item.id === items.id)
       if (!item) return { ...items }
       return {
         ...items,
+        category: findCategory ? findCategory.id : '',
         stock: items.stock - (item?.total_item || 0),
       }
     })
+    console.log(product)
     localStorage.setItem('product', JSON.stringify(product))
     setItems(product)
   }
@@ -540,7 +607,9 @@ export default function CashsirLayout() {
         </div>
 
         <main className="flex flex-col gap-5 pb-20 lg:pb-5">
-          <If condition={getItem.value.length === 0}>
+          <If condition={(getItem.value || [])?.length === 0}>
+            {JSON.stringify(getItem.value)}
+            asd
             <div className="flex flex-row justify-center mt-5 relative">
               <Image
                 src="/man-woman.jpg"
@@ -591,43 +660,59 @@ export default function CashsirLayout() {
                     )}
                   />
                   <Else key={'elseMap'}>
-                    <ArrayMap
-                      of={Object.keys(getItem.value)}
-                      render={(item, index) => (
-                        <div key={item + index}>
-                          <h3>{item} #</h3>
-                          <hr />
-                          <ArrayMap
-                            of={getItem.value[item] as Product[]}
-                            render={(item) => (
-                              <div
-                                key={item.id + index}
-                                className="p-5 mt-3 shadow-sm h-fit border border-slate-300 rounded-md flex flex-col gap-2 w-[170px]"
+                    <NoSsr>
+                      <ArrayMap
+                        of={Object.keys(getItem.value)}
+                        render={(title, index) => (
+                          <div key={title + index}>
+                            <Accordion
+                              style={{ boxShadow: 'none' }}
+                              defaultExpanded
+                            >
+                              <AccordionSummary
+                                expandIcon={<ChevronDown />}
+                                aria-controls="panel1-content"
+                                id="panel1-header"
                               >
-                                <div className="break-words">
-                                  {item.product_name}
-                                </div>
-                                <small className="text-xs text-slate-400">
-                                  Rp.{item.price} • {item.stock} item
-                                </small>
-                                <Button
-                                  variant="contained"
-                                  className="!mt-3"
-                                  onClick={() => handleAdd(item)}
-                                  disabled={
-                                    cartComputed.value?.filter(
-                                      (cartId) => cartId.id === item.id
-                                    ).length > 0
-                                  }
-                                >
-                                  Add Cart
-                                </Button>
-                              </div>
-                            )}
-                          />
-                        </div>
-                      )}
-                    />
+                                <Typography component="span">
+                                  {title}
+                                </Typography>
+                              </AccordionSummary>
+                              <AccordionDetails className="flex flex-wrap gap-6 flex-row !w-fit">
+                                <ArrayMap
+                                  of={getItem.value[title] as Product[]}
+                                  render={(item) => (
+                                    <div
+                                      key={item.id + index}
+                                      className="p-5 mt-3 shadow-sm h-fit border border-slate-300 rounded-md flex flex-col gap-2 w-[170px]"
+                                    >
+                                      <div className="break-words">
+                                        {item.product_name}
+                                      </div>
+                                      <small className="text-xs text-slate-400">
+                                        Rp.{item.price} • {item.stock} item
+                                      </small>
+                                      <Button
+                                        variant="contained"
+                                        className="!mt-3"
+                                        onClick={() => handleAdd(item)}
+                                        disabled={
+                                          cartComputed.value?.filter(
+                                            (cartId) => cartId.id === item.id
+                                          ).length > 0
+                                        }
+                                      >
+                                        Add Cart
+                                      </Button>
+                                    </div>
+                                  )}
+                                />
+                              </AccordionDetails>
+                            </Accordion>
+                          </div>
+                        )}
+                      />
+                    </NoSsr>
                   </Else>
                 </If>
               </div>
