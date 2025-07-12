@@ -40,9 +40,7 @@ interface Category {
 }
 
 export default function CashsirLayout() {
-  const [items, setItems] = useState<Product[] | { [key: string]: Product[] }>(
-    []
-  )
+  const [items, setItems] = useState<Product[]>([])
   const [cart, setCart] = useState<Product[]>([])
   const [search, setSearch] = useState('')
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
@@ -105,7 +103,8 @@ export default function CashsirLayout() {
 
   const getCheckout = useComputed(() => {
     const productFilter =
-      (items.length > 0 &&
+      (Array.isArray(items) &&
+        items.length > 0 &&
         items
           .map((item) => {
             const categoryParse = getCategory.value
@@ -144,7 +143,8 @@ export default function CashsirLayout() {
 
   const getItem = useComputed(() => {
     const productFilter =
-      (items.length > 0 &&
+      (Array.isArray(items) &&
+        items.length > 0 &&
         items
           .map((item) => {
             const categoryParse = getCategory.value
@@ -489,9 +489,8 @@ export default function CashsirLayout() {
         stock: items.stock - (item?.total_item || 0),
       }
     })
-    console.log(product)
     localStorage.setItem('product', JSON.stringify(product))
-    setItems(product)
+    setItems(product as Product[])
   }
 
   const getDetailPrint = useComputed(() => {
@@ -607,7 +606,12 @@ export default function CashsirLayout() {
         </div>
 
         <main className="flex flex-col gap-5 pb-20 lg:pb-5">
-          <If condition={(getItem.value || [])?.length === 0}>
+          <If
+            condition={
+              Array.isArray(getItem.value) &&
+              (getItem.value || [])?.length === 0
+            }
+          >
             {JSON.stringify(getItem.value)}
             asd
             <div className="flex flex-row justify-center mt-5 relative">
