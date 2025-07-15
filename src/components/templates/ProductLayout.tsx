@@ -157,7 +157,7 @@ export default function ProductLayout() {
                 onClick={() => {
                   form.setValue('product_name', row.product_name)
                   form.setValue('price', row.price)
-                  form.setValue('stock', row.stock)
+                  form.setValue('stock', String(row.stock))
                   form.setValue('description', row.description)
                   form.setValue('active', row.active)
                   form.setValue('category', row.category)

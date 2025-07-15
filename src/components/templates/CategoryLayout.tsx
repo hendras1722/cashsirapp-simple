@@ -3,7 +3,7 @@ import { Box, Button, InputAdornment, TextField } from '@mui/material'
 import DataTable from '../molecules/DataTable'
 import { Search } from 'lucide-react'
 import Modal from '../atoms/Modal'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import z from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -22,14 +22,15 @@ interface Category {
 
 export default function CategoryLayout() {
   const open = ref(false)
-  const [search, setSearch] = useState('')
-  const [isEdit, setisEdit] = useState('')
+  const search = ref('')
+  const isEdit = ref('')
+  const category = ref<Category[]>([])
 
-  const [category, setCategory] = useState<Category[]>([])
+  // const [category, setCategory] = useState<Category[]>([])
 
   const getItems = useComputed(() => {
-    return category.filter((item) =>
-      item.name.toLowerCase().includes(search.toLowerCase())
+    return category.value.filter((item) =>
+      item.name.toLowerCase().includes(search.value.toLowerCase())
     )
   })
 
@@ -49,13 +50,13 @@ export default function CategoryLayout() {
   useEffect(() => {
     const storeCategory = localStorage.getItem('category')
     if (storeCategory) {
-      setCategory(JSON.parse(storeCategory))
+      category.value = JSON.parse(storeCategory)
     }
   }, [])
 
   useEffect(() => {
     if (!open) {
-      setisEdit('')
+      isEdit.value = ''
       formReset()
     }
   }, [open.value, formReset])
@@ -63,11 +64,14 @@ export default function CategoryLayout() {
   const id = generateUUID()
 
   function onSubmit(data: z.infer<typeof formSchema>) {
-    if (isEdit) {
-      const findCategory = category.find((category) => isEdit === category.id)
+    if (isEdit.value) {
+      const findCategory = category.value.find(
+        (category) => isEdit.value === category.id
+      )
+      console.log(findCategory, isEdit.value)
       if (findCategory) {
-        const updatedCategory = category.map((category) => {
-          if (category.id === isEdit) {
+        const updatedCategory = category.value.map((category) => {
+          if (category.id === isEdit.value) {
             return {
               ...category,
               ...data,
@@ -75,20 +79,27 @@ export default function CategoryLayout() {
           }
           return category
         })
-        setCategory(updatedCategory)
+        category.value = updatedCategory
         localStorage.setItem('category', JSON.stringify(updatedCategory))
+        open.value = false
+        isEdit.value = ''
+        formReset()
       }
+
       return
     }
-    const updatedProducts = [...category, { ...data, id: id }]
-    setCategory(updatedProducts)
+    const updatedProducts = [...category.value, { ...data, id: id }]
+    category.value = updatedProducts
     localStorage.setItem('category', JSON.stringify(updatedProducts))
     open.value = false
+    formReset()
   }
 
   function handleDelete(e: string) {
-    const updatedCategory = category.filter((category) => category.id !== e)
-    setCategory(updatedCategory)
+    const updatedCategory = category.value.filter(
+      (category) => category.id !== e
+    )
+    category.value = updatedCategory
     localStorage.setItem('category', JSON.stringify(updatedCategory))
   }
 
@@ -135,7 +146,7 @@ export default function CategoryLayout() {
               ),
             },
           }}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => (search.value = e.target.value)}
           className="w-full"
           size="small"
         />
@@ -166,7 +177,7 @@ export default function CategoryLayout() {
                   variant="contained"
                   color="primary"
                   onClick={() => {
-                    setisEdit(row.id ? row.id : '')
+                    isEdit.value = row.id ? row.id : ''
                     open.value = true
                     setValue('name', row.name)
                   }}

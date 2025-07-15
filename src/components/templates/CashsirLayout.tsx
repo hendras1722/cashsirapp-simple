@@ -589,7 +589,6 @@ export default function CashsirLayout() {
         </div>
       </Modal>
 
-      {/* Main Content */}
       <div className="bg-white h-full flex-1 flex p-3 flex-wrap gap-5 flex-col">
         <div className="flex flex-row justify-between gap-4">
           <div className="flex flex-col w-full">
@@ -724,7 +723,6 @@ export default function CashsirLayout() {
           </If>
         </main>
 
-        {/* Mobile Cart Button */}
         <div className="fixed bottom-5 left-3 right-3 lg:!hidden">
           <Button
             fullWidth
@@ -738,7 +736,6 @@ export default function CashsirLayout() {
         </div>
       </div>
 
-      {/* Mobile Sidebar Overlay */}
       {isSidebarOpen.value && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
@@ -746,7 +743,6 @@ export default function CashsirLayout() {
         />
       )}
 
-      {/* Sidebar */}
       <div
         className={`
         fixed lg:relative
