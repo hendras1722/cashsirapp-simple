@@ -9,6 +9,7 @@ import z from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useComputed } from '@/composable/useComputed'
 import { generateUUID } from '@/utils/generatorUUID'
+import { default as ref } from '@/composable/useRef'
 
 const formSchema = z.object({
   name: z.string().min(2, 'Category name must be at least 2 characters'),
@@ -20,11 +21,12 @@ interface Category {
 }
 
 export default function CategoryLayout() {
-  const [open, setOpen] = useState(false)
+  const open = ref(false)
   const [search, setSearch] = useState('')
   const [isEdit, setisEdit] = useState('')
 
   const [category, setCategory] = useState<Category[]>([])
+
   const getItems = useComputed(() => {
     return category.filter((item) =>
       item.name.toLowerCase().includes(search.toLowerCase())
@@ -56,7 +58,7 @@ export default function CategoryLayout() {
       setisEdit('')
       formReset()
     }
-  }, [open, setOpen, formReset])
+  }, [open.value, formReset])
 
   const id = generateUUID()
 
@@ -81,7 +83,7 @@ export default function CategoryLayout() {
     const updatedProducts = [...category, { ...data, id: id }]
     setCategory(updatedProducts)
     localStorage.setItem('category', JSON.stringify(updatedProducts))
-    setOpen(false)
+    open.value = false
   }
 
   function handleDelete(e: string) {
@@ -94,7 +96,6 @@ export default function CategoryLayout() {
     <div>
       <Modal
         open={open}
-        setOpen={setOpen}
         contentText=""
         title={isEdit ? 'Edit Category' : 'Add Category'}
       >
@@ -141,7 +142,7 @@ export default function CategoryLayout() {
         <Button
           variant="contained"
           className="text-nowrap"
-          onClick={() => setOpen(true)}
+          onClick={() => (open.value = true)}
         >
           Add Category
         </Button>
@@ -166,7 +167,7 @@ export default function CategoryLayout() {
                   color="primary"
                   onClick={() => {
                     setisEdit(row.id ? row.id : '')
-                    setOpen(true)
+                    open.value = true
                     setValue('name', row.name)
                   }}
                 >

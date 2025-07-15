@@ -18,6 +18,7 @@ import { moneyRupiah } from '@/utils/convertMoney'
 import { useComputed } from '@/composable/useComputed'
 import { generateUUID } from '@/utils/generatorUUID'
 import { If } from '../atoms/if'
+import { default as ref } from '@/composable/useRef'
 
 const formSchema = z.object({
   id: z.string().optional(),
@@ -41,7 +42,7 @@ interface Category {
 }
 
 export default function ProductLayout() {
-  const [open, setOpen] = useState(false)
+  const open = ref(false)
   const [products, setProducts] = useState<z.infer<typeof formSchema>[]>([])
   const [search, setSearch] = useState('')
 
@@ -160,7 +161,7 @@ export default function ProductLayout() {
                   form.setValue('description', row.description)
                   form.setValue('active', row.active)
                   form.setValue('category', row.category)
-                  setOpen(true)
+                  open.value = true
                   setIsEdit(row.id ? row.id : '')
                 }}
               >
@@ -240,7 +241,7 @@ export default function ProductLayout() {
                 form.setValue('stock', row.stock)
                 form.setValue('description', row.description)
                 form.setValue('active', row.active)
-                setOpen(true)
+                open.value = true
                 setIsEdit(row.id ? row.id : '')
               }}
             >
@@ -287,7 +288,7 @@ export default function ProductLayout() {
         setProducts(updatedProducts)
         localStorage.setItem('product', JSON.stringify(updatedProducts))
       }
-      setOpen(false)
+      open.value = false
 
       return
     }
@@ -295,7 +296,7 @@ export default function ProductLayout() {
     const updatedProducts = [...products, { ...data, id: id }]
     setProducts(updatedProducts)
     localStorage.setItem('product', JSON.stringify(updatedProducts))
-    setOpen(false)
+    open.value = false
   }
 
   function handeDelete() {
@@ -308,7 +309,6 @@ export default function ProductLayout() {
   return (
     <div>
       <Modal
-        setOpen={setOpen}
         open={open}
         title={isEdit ? 'Edit Product' : 'Add Product'}
         contentText=""
@@ -455,7 +455,7 @@ export default function ProductLayout() {
             className="w-full"
             size="small"
           />
-          <Button variant="contained" onClick={() => setOpen(true)}>
+          <Button variant="contained" onClick={() => (open.value = true)}>
             Add
           </Button>
         </Box>

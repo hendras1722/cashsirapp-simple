@@ -9,17 +9,17 @@ export default function Modal({
   children,
   title,
   open,
-  setOpen,
   contentText,
 }: Readonly<{
   children: React.ReactNode
   title: string
-  open: boolean
-  setOpen: React.Dispatch<React.SetStateAction<boolean>>
+  open: {
+    value: boolean
+  }
   contentText: string
 }>) {
   const handleClose = () => {
-    setOpen(false)
+    open.value = false
   }
 
   const classes = useStyles()
@@ -29,7 +29,7 @@ export default function Modal({
       classes={{
         paper: classes.dialog,
       }}
-      open={open}
+      open={open.value}
       onClose={handleClose}
       disableEscapeKeyDown
       fullWidth={true}

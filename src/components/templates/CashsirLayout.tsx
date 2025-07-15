@@ -2,7 +2,8 @@
 
 import ArrayMap from '@/components/atoms/ArrayMap'
 import { Else, If } from '@/components/atoms/if'
-import { useComputed, useReactive } from '@/composable/useComputed'
+import { default as ref } from '@/composable/useRef'
+import { useComputed } from '@/composable/useComputed'
 import {
   Accordion,
   AccordionDetails,
@@ -15,7 +16,7 @@ import {
 import { X, ShoppingCart, ChevronDown } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import Modal from '../atoms/Modal'
 import { format } from 'date-fns'
 import html2canvas from 'html2canvas'
@@ -40,15 +41,15 @@ interface Category {
 }
 
 export default function CashsirLayout() {
-  const [items, setItems] = useState<Product[]>([])
-  const [cart, setCart] = useState<Product[]>([])
-  const [search, setSearch] = useState('')
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  const [open, setOpen] = useState(false)
+  const items = ref<Product[]>([])
+  const cart = ref<Product[]>([])
+  const isSidebarOpen = ref(false)
+  const open = ref(false)
+  const isCapturing = ref(false)
+  const category = ref<Category[]>([])
+  const searchComputed = ref('')
+  const uuid = ref('')
   const receiptRef = useRef<HTMLDivElement>(null)
-  const [isCapturing, setIsCapturing] = useState(false)
-  const [category, setCategory] = useState<Category[]>([])
-  const uuid = generateUUID()
 
   const route = useRoute()
 
@@ -56,11 +57,11 @@ export default function CashsirLayout() {
     localStorage.removeItem('cart')
   }, [route.asPath])
   useEffect(() => {
-    if (!open) {
-      setCart([])
+    if (!open.value) {
+      cart.value = []
       localStorage.removeItem('cart')
     }
-  }, [open, setOpen])
+  }, [open.value])
 
   useEffect(() => {
     const product = localStorage.getItem('product')
@@ -68,14 +69,14 @@ export default function CashsirLayout() {
     const categoryItem = localStorage.getItem('category')
 
     if (cartItem) {
-      setCart(JSON.parse(cartItem))
+      cart.value = JSON.parse(cartItem)
     }
 
     if (product) {
-      setItems(JSON.parse(product).filter((item) => item.active))
+      items.value = JSON.parse(product)
     }
     if (categoryItem) {
-      setCategory(JSON.parse(categoryItem))
+      category.value = JSON.parse(categoryItem)
     }
 
     return () => {
@@ -84,28 +85,30 @@ export default function CashsirLayout() {
   }, [])
 
   const cartComputed = useComputed(() => {
-    if (search === '') {
-      return cart
+    if (searchComputed.value === '') {
+      return cart.value
     }
-    if (search) {
-      return cart
+    if (searchComputed.value) {
+      return cart.value
         .filter((item) => item.active)
         .filter((item) =>
-          item.product_name.toLowerCase().includes(search.toLowerCase())
+          item.product_name
+            .toLowerCase()
+            .includes(searchComputed.value.toLowerCase())
         )
     }
     return []
   })
 
   const getCategory = useComputed(() => {
-    return category
+    return category.value
   })
 
   const getCheckout = useComputed(() => {
     const productFilter =
-      (Array.isArray(items) &&
-        items.length > 0 &&
-        items
+      (Array.isArray(items.value) &&
+        items.value.length > 0 &&
+        items.value
           .map((item) => {
             const categoryParse = getCategory.value
             const findCategory = categoryParse.find(
@@ -124,7 +127,9 @@ export default function CashsirLayout() {
           })
           .filter((item) => item.active && item.stock > 0)
           .filter((item) =>
-            item.product_name.toLowerCase().includes(search.toLowerCase())
+            item.product_name
+              .toLowerCase()
+              .includes(searchComputed.value.toLowerCase())
           )
           .sort((a, b) => {
             const aEmpty = a.category === '' || a.category === undefined
@@ -143,9 +148,9 @@ export default function CashsirLayout() {
 
   const getItem = useComputed(() => {
     const productFilter =
-      (Array.isArray(items) &&
-        items.length > 0 &&
-        items
+      (Array.isArray(items.value) &&
+        items.value.length > 0 &&
+        items.value
           .map((item) => {
             const categoryParse = getCategory.value
             const findCategory = categoryParse.find(
@@ -164,7 +169,9 @@ export default function CashsirLayout() {
           })
           .filter((item) => item.active && item.stock > 0)
           .filter((item) =>
-            item.product_name.toLowerCase().includes(search.toLowerCase())
+            item.product_name
+              .toLowerCase()
+              .includes(searchComputed.value.toLowerCase())
           )
           .sort((a, b) => {
             const aEmpty = a.category === '' || a.category === undefined
@@ -196,17 +203,8 @@ export default function CashsirLayout() {
     return productFilter
   })
 
-  const searchComputed = useReactive(
-    () => {
-      return search
-    },
-    (newValue) => {
-      setSearch(newValue)
-    }
-  )
-
   const totalPrice = useComputed(() => {
-    return cart.reduce((total: number, item: Product) => {
+    return cart.value.reduce((total: number, item: Product) => {
       return (
         total +
         (item.count ? Number(String(item.count).replace(/[.]/g, '')) : 0)
@@ -240,14 +238,14 @@ export default function CashsirLayout() {
           },
         ])
       )
-      setCart([
+      cart.value = [
         ...productExist,
         {
           ...data,
           count: 1 * Number(data.price.replace(/[.]/g, '')),
           total_item: 1,
         },
-      ])
+      ]
     } else {
       localStorage.setItem(
         'cart',
@@ -259,13 +257,13 @@ export default function CashsirLayout() {
           },
         ])
       )
-      setCart([
+      cart.value = [
         {
           ...data,
           count: 1 * Number(data.price.replace(/[.]/g, '')),
           total_item: 1,
         },
-      ])
+      ]
     }
   }
 
@@ -286,7 +284,7 @@ export default function CashsirLayout() {
           return item
         })
         .filter(Boolean)
-      setCart(updatedCart)
+      cart.value = updatedCart
       localStorage.setItem('cart', JSON.stringify(updatedCart))
     }
   }
@@ -308,25 +306,26 @@ export default function CashsirLayout() {
           return item
         })
         .filter((item) => item.total_item && item.total_item > 0)
-      setCart(updatedCart)
+      cart.value = updatedCart
       localStorage.setItem('cart', JSON.stringify(updatedCart))
     }
   }
 
   function deleteStock(e) {
     const updatedCart = cartComputed.value.filter((item) => item.id !== e.id)
-    setCart(updatedCart)
+    cart.value = updatedCart
+
     localStorage.setItem('cart', JSON.stringify(updatedCart))
   }
 
   function toggleSidebar() {
-    setIsSidebarOpen(!isSidebarOpen)
+    isSidebarOpen.value = !isSidebarOpen.value
   }
   const captureReceipt = async () => {
     if (!receiptRef.current) return null
 
     try {
-      setIsCapturing(true)
+      isCapturing.value = true
 
       await new Promise((resolve) => setTimeout(resolve, 100))
 
@@ -338,13 +337,13 @@ export default function CashsirLayout() {
         height: receiptRef.current.scrollHeight,
         width: receiptRef.current.scrollWidth,
       })
-
-      setIsCapturing(false)
+      isCapturing.value = false
 
       return canvas
     } catch (error) {
       console.error('Error capturing receipt:', error)
-      setIsCapturing(false)
+      isCapturing.value = false
+
       return null
     }
   }
@@ -418,15 +417,12 @@ export default function CashsirLayout() {
             <img src="${imgData}" alt="Receipt" />
             <script>
               window.onload = function() {
-                // Auto print ketika halaman loaded
                 window.print();
                 
-                // Close tab setelah print selesai
                 window.onafterprint = function() {
                   window.close();
                 };
                 
-                // Fallback: close tab jika user cancel print (setelah delay)
                 setTimeout(function() {
                   window.close();
                 }, 1000);
@@ -461,36 +457,42 @@ export default function CashsirLayout() {
   }
 
   function handleDetailPrint() {
-    setOpen(true)
+    open.value = true
+    uuid.value = generateUUID()
+
     if (Array.isArray(getItem.value)) {
-      const product = getItem.value.map((items) => {
-        const item = cart.find((item) => item.id === items.id)
-        if (!item) return { ...items }
+      const product = getItem.value.map((data) => {
+        const item = cart.value.find((item) => item.id === data.id)
+        if (!item) return { ...data }
         return {
-          ...items,
-          stock: items.stock - (item?.total_item || 0),
+          ...data,
+          stock: data.stock - (item?.total_item || 0),
         }
       })
       localStorage.setItem('product', JSON.stringify(product))
-      setItems(product)
+      items.value = product
       return
     }
-    const product = getCheckout.value.map((items) => {
-      console.log(items)
+    const product = getCheckout.value.map((data) => {
       const categoryParse = getCategory.value
-      const findCategory = categoryParse.find(
-        (itemCategory: any) => itemCategory.name === items.category
-      )
-      const item = cart.find((item) => item.id === items.id)
-      if (!item) return { ...items }
-      return {
-        ...items,
-        category: findCategory ? findCategory.id : '',
-        stock: items.stock - (item?.total_item || 0),
+      const item = cart.value.find((item) => item.id === data.id)
+      if (item) {
+        const findCategory = categoryParse.find(
+          (itemCategory: any) => itemCategory.name === item.category
+        )
+        return {
+          ...data,
+          category: findCategory ? findCategory.id : '',
+          stock: data.stock - (item?.total_item || 0),
+        }
       }
+      const findCategory = categoryParse.find(
+        (itemCategory: any) => itemCategory.name === data.category
+      )
+      return { ...data, category: findCategory ? findCategory.id : '' }
     })
     localStorage.setItem('product', JSON.stringify(product))
-    setItems(product as Product[])
+    items.value = product as Product[]
   }
 
   const getDetailPrint = useComputed(() => {
@@ -507,12 +509,12 @@ export default function CashsirLayout() {
   })
   return (
     <div className="h-screen bg-gray-400 flex relative">
-      <Modal open={open} setOpen={setOpen} contentText={''} title={''}>
+      <Modal open={open} contentText={''} title={''}>
         <div className="mb-5" ref={receiptRef}>
           <div className="text-center">
             {format(new Date(), 'dd/MM/yyyy HH:mm')}
           </div>
-          <div className="text-center mb-2">{uuid}</div>
+          <div className="text-center mb-2">{String(uuid.value)}</div>
           <table className="mt-5 w-full">
             <thead className="text-left gap-3">
               <tr>
@@ -563,7 +565,7 @@ export default function CashsirLayout() {
             Terima kasih sudah menggunakan layanan kami
           </p>
           <div className="flex justify-between gap-3 mt-3">
-            {!isCapturing && (
+            {!isCapturing.value && (
               <>
                 <Button
                   fullWidth
@@ -731,13 +733,13 @@ export default function CashsirLayout() {
             className="!py-3"
           >
             <ShoppingCart className="w-4 h-4 mr-2" />
-            Cart ({cart.length})
+            Cart ({cart.value.length})
           </Button>
         </div>
       </div>
 
       {/* Mobile Sidebar Overlay */}
-      {isSidebarOpen && (
+      {isSidebarOpen.value && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
           onClick={toggleSidebar}
@@ -752,7 +754,7 @@ export default function CashsirLayout() {
         bg-gray-50 shadow-sm border-l border-slate-300
         transform transition-transform duration-300 ease-in-out
         z-50
-        ${isSidebarOpen ? 'translate-x-0' : 'translate-x-full'}
+        ${isSidebarOpen.value ? 'translate-x-0' : 'translate-x-full'}
         lg:translate-x-0
         lg:block
       `}
@@ -784,7 +786,7 @@ export default function CashsirLayout() {
                 </thead>
                 <tbody>
                   <ArrayMap
-                    of={cart}
+                    of={cart.value}
                     render={(item) => (
                       <tr key={item.id}>
                         <td className="px-1 sm:px-3 break-words max-w-[80px] sm:max-w-[120px] text-xs sm:text-sm">
@@ -861,7 +863,7 @@ export default function CashsirLayout() {
               variant="contained"
               className="mx-3"
               onClick={handleDetailPrint}
-              disabled={!cart.length}
+              disabled={!cart.value.length}
             >
               Print
             </Button>
