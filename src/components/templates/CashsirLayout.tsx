@@ -515,7 +515,7 @@ export default function CashsirLayout() {
         printReceipt={printReceipt}
       />
 
-      <div className="bg-white h-full flex-1 flex p-3 flex-wrap gap-5 flex-row">
+      <div className="bg-white h-full flex-1 flex p-3 flex-wrap gap-5 sm:flex-col flex-row">
         <OrganismSearchLanding search={searchComputed} />
 
         <main className="flex flex-col gap-5 pb-20 lg:pb-5">
