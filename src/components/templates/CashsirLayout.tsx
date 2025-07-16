@@ -4,24 +4,18 @@ import ArrayMap from '@/components/atoms/ArrayMap'
 import { Else, If } from '@/components/atoms/if'
 import { default as ref } from '@/composable/useRef'
 import { useComputed } from '@/composable/useComputed'
-import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
-  Button,
-  Input,
-  NoSsr,
-  Typography,
-} from '@mui/material'
-import { X, ShoppingCart, ChevronDown } from 'lucide-react'
+import { Button, NoSsr } from '@mui/material'
+import { X, ShoppingCart } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useEffect, useRef } from 'react'
-import Modal from '../atoms/Modal'
-import { format } from 'date-fns'
+import { useCallback, useEffect, useRef } from 'react'
 import html2canvas from 'html2canvas'
 import { generateUUID } from '@/utils/generatorUUID'
 import { useRoute } from '@/composable/useRoute'
+import OrganismSearchLanding from '../organism/OrganismSearchLanding'
+import OrganismWithCategory from '../organism/OrganismWithCategory'
+import TableRincianDetail from '../molecules/TableRincianLanding'
+import ModalReceipt from '../molecules/ModalReceipt'
 
 interface Product {
   id: number
@@ -223,7 +217,7 @@ export default function CashsirLayout() {
       : 0
   })
 
-  function handleAdd(data) {
+  const handleAdd = useCallback((data) => {
     const getCart = localStorage.getItem('cart')
     if (getCart) {
       const productExist = JSON.parse(getCart)
@@ -265,9 +259,9 @@ export default function CashsirLayout() {
         },
       ]
     }
-  }
+  }, [])
 
-  function addStock(e) {
+  const addStock = useCallback((e) => {
     const product = cartComputed.value.find((item) => item.id === e.id)
     if (product) {
       const updatedCart = cartComputed.value
@@ -287,9 +281,9 @@ export default function CashsirLayout() {
       cart.value = updatedCart
       localStorage.setItem('cart', JSON.stringify(updatedCart))
     }
-  }
+  }, [])
 
-  function minStock(e) {
+  const minStock = useCallback((e) => {
     const product = cartComputed.value.find((item) => item.id === e.id)
     if (product) {
       const updatedCart = cartComputed.value
@@ -309,7 +303,7 @@ export default function CashsirLayout() {
       cart.value = updatedCart
       localStorage.setItem('cart', JSON.stringify(updatedCart))
     }
-  }
+  }, [])
 
   function deleteStock(e) {
     const updatedCart = cartComputed.value.filter((item) => item.id !== e.id)
@@ -509,102 +503,20 @@ export default function CashsirLayout() {
   })
   return (
     <div className="h-screen bg-gray-400 flex relative">
-      <Modal open={open} contentText={''} title={''}>
-        <div className="mb-5" ref={receiptRef}>
-          <div className="text-center">
-            {format(new Date(), 'dd/MM/yyyy HH:mm')}
-          </div>
-          <div className="text-center mb-2">{String(uuid.value)}</div>
-          <table className="mt-5 w-full">
-            <thead className="text-left gap-3">
-              <tr>
-                <th className="px-1 sm:px-3 text-xs sm:text-sm"></th>
-                <th className="px-1 sm:px-3 text-xs sm:text-sm"></th>
-                <th className="px-1 sm:px-3 text-xs sm:text-sm"></th>
-                <th className="px-1 sm:px-3 text-xs sm:text-sm"></th>
-              </tr>
-            </thead>
-            <tbody>
-              <ArrayMap
-                of={getDetailPrint.value}
-                render={(item, index) => (
-                  <tr key={item.id}>
-                    <td className="px-1 sm:px-3 break-words max-w-[80px] sm:max-w-[120px] text-xs sm:text-sm">
-                      {item.product_name}
-                    </td>
-                    <td className="px-1 sm:px-3">
-                      <div className="flex items-center gap-1 sm:gap-2">
-                        <span className="text-xs sm:text-sm min-w-[20px] text-center">
-                          {item.total_item}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-1 sm:px-3 text-xs sm:text-sm">
-                      Rp.
-                      {getTotalHarga.value[index].total.toLocaleString('id-ID')}
-                    </td>
-                  </tr>
-                )}
-              />
-              <tr>
-                <td className="px-1 sm:px-3 break-words max-w-[80px] sm:max-w-[120px] text-xs sm:text-sm">
-                  Harga
-                </td>
-                <td className="px-1 sm:px-3"></td>
-                <td className="px-1 sm:px-3 text-xs sm:text-sm">
-                  Rp.
-                  {(totalPriceDetail.value &&
-                    totalPriceDetail.value.toLocaleString('id-ID')) ||
-                    0}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-          <div className="border-2 border-black h-1 w-full border-dashed mt-5"></div>
-          <p className="text-center text-lg mt-3 " style={{ marginBottom: 30 }}>
-            Terima kasih sudah menggunakan layanan kami
-          </p>
-          <div className="flex justify-between gap-3 mt-3">
-            {!isCapturing.value && (
-              <>
-                <Button
-                  fullWidth
-                  color="info"
-                  variant="outlined"
-                  onClick={downloadReceipt}
-                >
-                  Download
-                </Button>
-                <Button
-                  fullWidth
-                  color="success"
-                  variant="outlined"
-                  onClick={printReceipt}
-                >
-                  Print
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
-      </Modal>
+      <ModalReceipt
+        open={open}
+        receiptRef={receiptRef}
+        getDetailPrint={getDetailPrint}
+        uuid={uuid}
+        getTotalHarga={getTotalHarga}
+        totalPriceDetail={totalPriceDetail}
+        isCapturing={isCapturing}
+        downloadReceipt={downloadReceipt}
+        printReceipt={printReceipt}
+      />
 
-      <div className="bg-white h-full flex-1 flex p-3 flex-wrap gap-5 flex-col">
-        <div className="flex flex-row justify-between gap-4">
-          <div className="flex flex-col w-full">
-            <small>Search:</small>
-            <Input onChange={(e) => (searchComputed.value = e.target.value)} />
-          </div>
-          <div className="flex gap-2">
-            <Button
-              href="/admin/product"
-              variant="outlined"
-              className="hidden sm:inline-flex"
-            >
-              Manage
-            </Button>
-          </div>
-        </div>
+      <div className="bg-white h-full flex-1 flex p-3 flex-wrap gap-5 flex-row">
+        <OrganismSearchLanding search={searchComputed} />
 
         <main className="flex flex-col gap-5 pb-20 lg:pb-5">
           <If
@@ -668,50 +580,13 @@ export default function CashsirLayout() {
                         of={Object.keys(getItem.value)}
                         render={(title, index) => (
                           <div key={title + index}>
-                            <Accordion
-                              style={{ boxShadow: 'none' }}
-                              defaultExpanded
-                            >
-                              <AccordionSummary
-                                expandIcon={<ChevronDown />}
-                                aria-controls="panel1-content"
-                                id="panel1-header"
-                              >
-                                <Typography component="span">
-                                  {title}
-                                </Typography>
-                              </AccordionSummary>
-                              <AccordionDetails className="flex flex-wrap gap-6 flex-row !w-fit">
-                                <ArrayMap
-                                  of={getItem.value[title] as Product[]}
-                                  render={(item) => (
-                                    <div
-                                      key={item.id + index}
-                                      className="p-5 mt-3 shadow-sm h-fit border border-slate-300 rounded-md flex flex-col gap-2 w-[170px]"
-                                    >
-                                      <div className="break-words">
-                                        {item.product_name}
-                                      </div>
-                                      <small className="text-xs text-slate-400">
-                                        Rp.{item.price} • {item.stock} item
-                                      </small>
-                                      <Button
-                                        variant="contained"
-                                        className="!mt-3"
-                                        onClick={() => handleAdd(item)}
-                                        disabled={
-                                          cartComputed.value?.filter(
-                                            (cartId) => cartId.id === item.id
-                                          ).length > 0
-                                        }
-                                      >
-                                        Add Cart
-                                      </Button>
-                                    </div>
-                                  )}
-                                />
-                              </AccordionDetails>
-                            </Accordion>
+                            <OrganismWithCategory
+                              cartComputed={cartComputed}
+                              title={title}
+                              getItem={getItem}
+                              index={index}
+                              handleAdd={handleAdd}
+                            />
                           </div>
                         )}
                       />
@@ -736,12 +611,12 @@ export default function CashsirLayout() {
         </div>
       </div>
 
-      {isSidebarOpen.value && (
+      <If condition={isSidebarOpen.value}>
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
           onClick={toggleSidebar}
         />
-      )}
+      </If>
 
       <div
         className={`
@@ -769,78 +644,12 @@ export default function CashsirLayout() {
 
           <div className="px-3 flex-1 h-[calc(100vh-200px)] overflow-auto">
             <div className="overflow-x-auto">
-              <table className="mt-5 w-full">
-                <thead className="text-left gap-3">
-                  <tr>
-                    <th className="px-1 sm:px-3 text-xs sm:text-sm">
-                      Nama Barang
-                    </th>
-                    <th className="px-1 sm:px-3 text-xs sm:text-sm">Jumlah</th>
-                    <th className="px-1 sm:px-3 text-xs sm:text-sm">Harga</th>
-                    <th className="px-1 sm:px-3 text-xs sm:text-sm"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <ArrayMap
-                    of={cart.value}
-                    render={(item) => (
-                      <tr key={item.id}>
-                        <td className="px-1 sm:px-3 break-words max-w-[80px] sm:max-w-[120px] text-xs sm:text-sm">
-                          {item.product_name}
-                        </td>
-                        <td className="px-1 sm:px-3">
-                          <div className="flex items-center gap-1 sm:gap-2">
-                            <Button
-                              variant="outlined"
-                              size="small"
-                              className="!min-w-fit !p-1 !text-xs"
-                              onClick={() => addStock(item)}
-                              disabled={
-                                !!(
-                                  item.total_item &&
-                                  item.total_item >= item.stock
-                                )
-                              }
-                            >
-                              +
-                            </Button>
-                            <span className="text-xs sm:text-sm min-w-[20px] text-center">
-                              {item.total_item}
-                            </span>
-                            <Button
-                              variant="outlined"
-                              size="small"
-                              className="!min-w-fit !p-1 !text-xs"
-                              onClick={() => minStock(item)}
-                            >
-                              -
-                            </Button>
-                          </div>
-                        </td>
-                        <td className="px-1 sm:px-3 text-xs sm:text-sm">
-                          Rp.
-                          {(item.price &&
-                            Number(
-                              item.price.replace(/[.]/g, '')
-                            ).toLocaleString('id-ID')) ||
-                            0}
-                        </td>
-                        <td className="px-1 sm:px-3">
-                          <Button
-                            onClick={() => deleteStock(item)}
-                            variant="outlined"
-                            color="error"
-                            size="small"
-                            className="!min-w-fit !p-1"
-                          >
-                            <X className="w-3 h-3" />
-                          </Button>
-                        </td>
-                      </tr>
-                    )}
-                  />
-                </tbody>
-              </table>
+              <TableRincianDetail
+                cart={cart}
+                addStock={addStock}
+                minStock={minStock}
+                deleteStock={deleteStock}
+              />
             </div>
           </div>
 

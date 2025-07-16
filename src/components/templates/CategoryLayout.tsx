@@ -26,8 +26,6 @@ export default function CategoryLayout() {
   const isEdit = ref('')
   const category = ref<Category[]>([])
 
-  // const [category, setCategory] = useState<Category[]>([])
-
   const getItems = useComputed(() => {
     return category.value.filter((item) =>
       item.name.toLowerCase().includes(search.value.toLowerCase())

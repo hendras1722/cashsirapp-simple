@@ -289,7 +289,7 @@ export default function ProductLayout() {
         localStorage.setItem('product', JSON.stringify(updatedProducts))
       }
       open.value = false
-
+      form.reset()
       return
     }
 
@@ -297,6 +297,7 @@ export default function ProductLayout() {
     setProducts(updatedProducts)
     localStorage.setItem('product', JSON.stringify(updatedProducts))
     open.value = false
+    form.reset()
   }
 
   function handeDelete() {
@@ -435,6 +436,7 @@ export default function ProductLayout() {
               <Button variant="contained" type="submit">
                 Submit
               </Button>
+              <Button type="reset">Reset</Button>
             </form>
           </div>
         </Box>
@@ -455,7 +457,13 @@ export default function ProductLayout() {
             className="w-full"
             size="small"
           />
-          <Button variant="contained" onClick={() => (open.value = true)}>
+          <Button
+            variant="contained"
+            onClick={() => {
+              open.value = true
+              setIsEdit('')
+            }}
+          >
             Add
           </Button>
         </Box>
