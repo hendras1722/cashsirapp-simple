@@ -261,56 +261,65 @@ export default function CashsirLayout() {
     }
   }, [])
 
-  const addStock = useCallback((e) => {
-    const product = cartComputed.value.find((item) => item.id === e.id)
-    if (product) {
-      const updatedCart = cartComputed.value
-        .map((item) => {
-          if (item.id === e.id) {
-            return {
-              ...item,
-              count:
-                (Number(item.total_item) + 1) *
-                Number(item.price.replace(/[.]/g, '')),
-              total_item: item.total_item ? Number(item.total_item) + 1 : 0,
+  const addStock = useCallback(
+    (e) => {
+      const product = cartComputed.value.find((item) => item.id === e.id)
+      if (product) {
+        const updatedCart = cartComputed.value
+          .map((item) => {
+            if (item.id === e.id) {
+              return {
+                ...item,
+                count:
+                  (Number(item.total_item) + 1) *
+                  Number(item.price.replace(/[.]/g, '')),
+                total_item: item.total_item ? Number(item.total_item) + 1 : 0,
+              }
             }
-          }
-          return item
-        })
-        .filter(Boolean)
-      cart.value = updatedCart
-      localStorage.setItem('cart', JSON.stringify(updatedCart))
-    }
-  }, [])
+            return item
+          })
+          .filter(Boolean)
+        cart.value = updatedCart
+        localStorage.setItem('cart', JSON.stringify(updatedCart))
+      }
+    },
+    [cartComputed.value]
+  )
 
-  const minStock = useCallback((e) => {
-    const product = cartComputed.value.find((item) => item.id === e.id)
-    if (product) {
-      const updatedCart = cartComputed.value
-        .map((item) => {
-          if (item.id === e.id) {
-            return {
-              ...item,
-              count:
-                (Number(item.total_item) - 1) *
-                Number(item.price.replace(/[.]/g, '')),
-              total_item: item.total_item ? Number(item.total_item) - 1 : 0,
+  const minStock = useCallback(
+    (e) => {
+      const product = cartComputed.value.find((item) => item.id === e.id)
+      if (product) {
+        const updatedCart = cartComputed.value
+          .map((item) => {
+            if (item.id === e.id) {
+              return {
+                ...item,
+                count:
+                  (Number(item.total_item) - 1) *
+                  Number(item.price.replace(/[.]/g, '')),
+                total_item: item.total_item ? Number(item.total_item) - 1 : 0,
+              }
             }
-          }
-          return item
-        })
-        .filter((item) => item.total_item && item.total_item > 0)
+            return item
+          })
+          .filter((item) => item.total_item && item.total_item > 0)
+        cart.value = updatedCart
+        localStorage.setItem('cart', JSON.stringify(updatedCart))
+      }
+    },
+    [cartComputed.value]
+  )
+
+  const deleteStock = useCallback(
+    (e) => {
+      const updatedCart = cartComputed.value.filter((item) => item.id !== e.id)
       cart.value = updatedCart
+
       localStorage.setItem('cart', JSON.stringify(updatedCart))
-    }
-  }, [])
-
-  function deleteStock(e) {
-    const updatedCart = cartComputed.value.filter((item) => item.id !== e.id)
-    cart.value = updatedCart
-
-    localStorage.setItem('cart', JSON.stringify(updatedCart))
-  }
+    },
+    [cartComputed.value]
+  )
 
   function toggleSidebar() {
     isSidebarOpen.value = !isSidebarOpen.value
