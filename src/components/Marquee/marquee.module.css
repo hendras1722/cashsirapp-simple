@@ -1,0 +1,54 @@
+/* keyframes tetap lokal */
+@keyframes marquee-horizontal {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes marquee-vertical {
+  0% {
+    transform: translateY(0%);
+  }
+  100% {
+    transform: translateY(-50%);
+  }
+}
+
+/* kelas yang dipakai pada element content (lokal) */
+.contentHorizontal {
+  animation-name: marquee-horizontal;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  /* duration akan di-override lewat inline style dari React (props.speed) */
+}
+
+.contentVertical {
+  animation-name: marquee-vertical;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+/* reverse (lokal) */
+.reverse {
+  animation-direction: reverse;
+}
+
+/* PAUSE ON HOVER:
+   Karena ini file CSS module, kita butuh menarget class global `group`.
+   :global(.group):hover akan match element yang punya class "group" (Tailwind).
+   Lalu pilih child lokal (.contentHorizontal / .contentVertical) untuk pause.
+*/
+:global(.group):hover .contentHorizontal,
+:global(.group):hover .contentVertical {
+  animation-play-state: paused;
+}
+
+/* Optional: kalau ingin pause dengan class explicit (tidak hover),
+   kita sediakan .paused (lokal) yang bisa ditambahkan dari React.
+*/
+.paused {
+  animation-play-state: paused;
+}
