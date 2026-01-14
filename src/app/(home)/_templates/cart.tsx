@@ -1,6 +1,7 @@
 "use client"
 
 import type { Cart } from "../_type/cart"
+import { Icon } from "@iconify/react"
 import Image from "next/image"
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -15,9 +16,12 @@ export default function CartPage() {
     setMounted(true)
   }, [])
 
-  function onQtyChange(data: Cart, type: "add" | "remove") {
+  function onQtyChange(data: Cart, type: "add" | "remove" | "trash") {
     setData((prev) => {
       if (type === "remove" && data.qty === 1) {
+        return prev.filter(item => item.id !== data.id)
+      }
+      if (type === "trash") {
         return prev.filter(item => item.id !== data.id)
       }
       return prev.map((item) => {
@@ -39,7 +43,7 @@ export default function CartPage() {
       <ArrayMap
         of={data ?? []}
         render={(item, index) => (
-          <div key={`${index}-product`} className="grid grid-cols-[100px_1fr] grid-rows-1 gap-4 mt-2 first:mt-0">
+          <div key={`${index}-product`} className="grid grid-cols-[100px_1fr] grid-rows-1 gap-4 mt-2 first:mt-0 cart-item-mobile">
             <div className="bg-[#e67e22] rounded-2xl w-full h-[100px] flex justify-center items-center">
               <div className="flex flex-col gap-4 justify-center items-center">
                 <Image
@@ -51,18 +55,19 @@ export default function CartPage() {
                 />
               </div>
             </div>
-            <div className="flex flex-col gap-4">
-              <p className="text-[25px] font-medium">{item.name_product}</p>
-              <div className="flex justify-between gap-3 items-center">
+            <div className="flex flex-col gap-2">
+              <p className="text-[20px] font-medium">{item.name_product}</p>
+              <div>
+                Rp.
+                {Number(item.price * item.qty).toLocaleString("id-ID")}
+              </div>
+              <div className="flex justify-start gap-3 items-center">
                 <div className="flex">
                   <Button onClick={() => onQtyChange(item, "remove")} className="bg-[#82DE3A]/20 rounded-tr-none rounded-br-none border border-[#82DE3A] hover:bg-[#82DE3A] text-[#82DE3A] font-bold text-2xl ">-</Button>
                   <div className="flex flex-col items-center text-2xl border border-[#82DE3A] px-2 text-[#82DE3A]">{item.qty}</div>
                   <Button onClick={() => onQtyChange(item, "add")} className="bg-[#82DE3A]/20 rounded-tl-none rounded-bl-none border border-[#82DE3A] hover:bg-[#82DE3A] text-[#82DE3A] font-bold text-2xl ">+</Button>
                 </div>
-                <div>
-                  Rp.
-                  {Number(item.price).toLocaleString("id-ID")}
-                </div>
+                <Button onClick={() => onQtyChange(item, "trash")} className="bg-[#c91010]/20 border border-[#c91010] hover:bg-[#c91010] text-[#c91010] hover:text-white font-bold text-2xl "><Icon icon="lucide:trash" /></Button>
               </div>
             </div>
           </div>

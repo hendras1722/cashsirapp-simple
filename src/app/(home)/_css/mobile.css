@@ -1,0 +1,22 @@
+@media (max-width: 768px) {
+  .grid-mobile {
+    grid-template-columns: 1fr;
+  }
+
+  .header-mobile {
+    grid-template-columns: 1fr;
+  }
+
+  .cart-mobile {
+    display: none;
+  }
+
+  .cart-mobile-button {
+    display: block;
+  }
+
+  .cart-item-mobile {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+}
